@@ -4,6 +4,10 @@ import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import org.intellij.lang.annotations.Language
+import org.json.JSONArray
+import org.json.JSONObject
+import java.lang.StringBuilder
+import java.net.URLEncoder
 
 internal class RequestInspectorJavaScriptInterface {
 
@@ -46,16 +50,37 @@ internal class RequestInspectorJavaScriptInterface {
     }
 
     @JavascriptInterface
-    fun recordFormSubmission(url: String,
+    fun recordFormSubmission(
+        url: String,
         method: String,
-        body: String,
+        formParameterList: String,
         headers: String,
         trace: String,
         enctype: String?
     ) {
+        val formParameterJsonArray = JSONArray(formParameterList)
+        var modifiedHeaders = headers
+
+        val body = when (enctype) {
+            "application/x-www-form-urlencoded" -> {
+                getUrlEncodedFormBody(formParameterJsonArray)
+            }
+            "multipart/form-data" -> {
+                modifiedHeaders += "\ncontent-type: multipart/form-data; boundary=$MULTIPART_FORM_BOUNDARY"
+                getMultiPartFormBody(formParameterJsonArray)
+            }
+            "text/plain" -> {
+                getPlainTextFormBody(formParameterJsonArray)
+            }
+            else -> {
+                Log.e(LOG_TAG, "Incorrect encoding received from JavaScript: $enctype")
+                ""
+            }
+        }
+
         Log.i(LOG_TAG, "Recorded form submission from JavaScript")
         recordedRequests.add(
-            RecordedRequest(RequestType.FORM, url, method, body, headers, trace, enctype)
+            RecordedRequest(RequestType.FORM, url, method, body, modifiedHeaders, trace, enctype)
         )
     }
 
@@ -75,8 +100,63 @@ internal class RequestInspectorJavaScriptInterface {
         )
     }
 
+    private fun getUrlEncodedFormBody(formParameterJsonArray: JSONArray): String {
+        val resultStringBuilder = StringBuilder()
+        repeat(formParameterJsonArray.length()) { i ->
+            val formParameter = formParameterJsonArray.get(i) as JSONObject
+            val name = formParameter.getString("name")
+            val value = formParameter.getString("value")
+            val encodedValue = URLEncoder.encode(value, "UTF-8")
+            if (i != 0) {
+                resultStringBuilder.append("&")
+            }
+            resultStringBuilder.append(name)
+            resultStringBuilder.append("=")
+            resultStringBuilder.append(encodedValue)
+        }
+        return resultStringBuilder.toString()
+    }
+
+    private fun getMultiPartFormBody(formParameterJsonArray: JSONArray): String {
+        val resultStringBuilder = StringBuilder()
+        repeat(formParameterJsonArray.length()) { i ->
+            val formParameter = formParameterJsonArray.get(i) as JSONObject
+            val name = formParameter.getString("name")
+            val value = formParameter.getString("value")
+            resultStringBuilder.append("--")
+            resultStringBuilder.append(MULTIPART_FORM_BOUNDARY)
+            resultStringBuilder.append("\n")
+            resultStringBuilder.append("Content-Disposition: form-data; name=\"$name\"")
+            resultStringBuilder.append("\n\n")
+            resultStringBuilder.append(value)
+            resultStringBuilder.append("\n")
+        }
+        resultStringBuilder.append("--")
+        resultStringBuilder.append(MULTIPART_FORM_BOUNDARY)
+        resultStringBuilder.append("--")
+        return resultStringBuilder.toString()
+    }
+
+    private fun getPlainTextFormBody(formParameterJsonArray: JSONArray): String {
+        val resultStringBuilder = StringBuilder()
+        repeat(formParameterJsonArray.length()) { i ->
+            val formParameter = formParameterJsonArray.get(i) as JSONObject
+            val name = formParameter.getString("name")
+            val value = formParameter.getString("value")
+            if (i != 0) {
+                resultStringBuilder.append("\n")
+            }
+            resultStringBuilder.append(name)
+            resultStringBuilder.append("=")
+            resultStringBuilder.append(value)
+        }
+        return resultStringBuilder.toString()
+    }
+
     companion object {
         private const val LOG_TAG = "RequestInspectorJs"
+        private const val MULTIPART_FORM_BOUNDARY = "----WebKitFormBoundaryU7CgQs9WnqlZYKs6"
+
         @Language("JS")
         private const val JAVASCRIPT_INTERCEPTION_CODE = """
 function getFullUrl(url) {
