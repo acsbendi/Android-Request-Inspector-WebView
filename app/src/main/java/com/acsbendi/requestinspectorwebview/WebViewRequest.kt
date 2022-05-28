@@ -22,7 +22,7 @@ data class WebViewRequest(
         }
         val traceWithIndent =
             trace
-                .split("\n")
+                .lines()
                 // Remove the first line that always says "Error"
                 .drop(1)
                 .joinToString("\n", "\n") {
