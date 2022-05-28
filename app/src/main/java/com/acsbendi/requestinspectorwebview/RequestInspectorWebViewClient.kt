@@ -13,8 +13,9 @@ class RequestInspectorWebViewClient @JvmOverloads constructor(
     private val options: RequestInspectorOptions = RequestInspectorOptions()
 ) : WebViewClient() {
 
+    private val interceptionJavascriptInterface = RequestInspectorJavaScriptInterface()
+
     init {
-        val interceptionJavascriptInterface = RequestInspectorJavaScriptInterface()
         webView.addJavascriptInterface(interceptionJavascriptInterface, "RequestInspection")
     }
 
@@ -22,7 +23,11 @@ class RequestInspectorWebViewClient @JvmOverloads constructor(
         view: WebView,
         request: WebResourceRequest
     ): WebResourceResponse? {
-        Log.i(LOG_TAG, request.toJsonStringWithCookies())
+        Log.i(LOG_TAG, "Received request: " + request.toJsonStringWithCookies())
+        val recordedRequest = interceptionJavascriptInterface.findRecordedRequestForUrl(
+            request.url.toString()
+        )
+        Log.i(LOG_TAG, "Corresponding recorded request: $recordedRequest")
         return null
     }
 
