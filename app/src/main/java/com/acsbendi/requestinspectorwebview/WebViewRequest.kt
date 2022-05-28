@@ -17,24 +17,24 @@ data class WebViewRequest(
     val hasGesture: Boolean
 ) {
     override fun toString(): String {
-        val headersString = headers.entries.joinToString("\n") { (key, value) ->
-            "   $key: $value"
+        val headersString = headers.entries.joinToString("\n", "\n") { (key, value) ->
+            "                $key: $value"
         }
-        val traceWithIndent = "   $trace"
+        val traceWithIndent = trace.split("\n").joinToString("\n", "\n") {
+            "               ${it.trim()}"
+        }
         return """
             Type: $type
             URL: $url
             Method: $method
             Body: $body
-            Headers: 
-                $headersString
-            Trace:
-                $traceWithIndent
+            Headers: $headersString
+            Trace: $traceWithIndent
             Encoding type (form submissions only): $enctype
             Is for main frame? $isForMainFrame
             Is redirect? $isRedirect
             Has gesture? $hasGesture
-        """.trimIndent()
+        """
     }
 
     companion object {
@@ -44,7 +44,7 @@ data class WebViewRequest(
         ): WebViewRequest {
             val type = recordedRequest?.type ?: WebViewRequestType.HTML
             val url = webResourceRequest.url.toString()
-            val cookies = CookieManager.getInstance().getCookie(url)
+            val cookies = CookieManager.getInstance().getCookie(url) ?: ""
             val headers = HashMap<String, String>()
             headers["cookie"] = cookies
             if (recordedRequest != null) {
