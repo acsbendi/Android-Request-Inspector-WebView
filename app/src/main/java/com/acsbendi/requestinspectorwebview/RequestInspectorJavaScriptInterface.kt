@@ -147,7 +147,7 @@ XMLHttpRequest.prototype.send = function (body) {
     lastXmlhttpRequestPrototypeMethod = null;
     xmlhttpRequestUrl = null;
     xmlhttpRequestHeaders = "";
-    this._send(fixedBody);
+    this._send(body);
 };
 
 window._fetch = window.fetch;
