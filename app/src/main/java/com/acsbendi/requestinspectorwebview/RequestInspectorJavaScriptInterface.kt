@@ -237,7 +237,7 @@ XMLHttpRequest.prototype.send = function (body) {
     RequestInspection.recordXhr(
         url,
         lastXmlhttpRequestPrototypeMethod,
-        body,
+        body || "",
         JSON.stringify(xmlhttpRequestHeaders),
         err.stack
     );
