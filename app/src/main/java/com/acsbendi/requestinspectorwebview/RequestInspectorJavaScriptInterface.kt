@@ -104,7 +104,7 @@ function recordFormSubmission(form) {
     const path = form.attributes['action'] === undefined ? "/" : form.attributes['action'].nodeValue;
     const method = form.attributes['method'] === undefined ? "GET" : form.attributes['method'].nodeValue;
     const url = getFullUrl(path);
-    const encType = form.attributes['enctype'] === undefined ? null : form.attributes['enctype'].nodeValue;
+    const encType = form.attributes['enctype'] === undefined ? "application/x-www-form-urlencoded" : form.attributes['enctype'].nodeValue;
     const err = new Error();
     RequestInspection.recordFormSubmission(
         url,
