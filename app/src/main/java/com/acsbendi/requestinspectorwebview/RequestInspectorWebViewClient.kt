@@ -8,7 +8,7 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 
-class RequestInspectorWebViewClient @JvmOverloads constructor(
+open class RequestInspectorWebViewClient @JvmOverloads constructor(
     webView: WebView,
     private val options: RequestInspectorOptions = RequestInspectorOptions()
 ) : WebViewClient() {
