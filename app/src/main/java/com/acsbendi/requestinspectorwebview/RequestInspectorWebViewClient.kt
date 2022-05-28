@@ -1,5 +1,6 @@
 package com.acsbendi.requestinspectorwebview
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.util.Log
 import android.webkit.WebResourceRequest
@@ -7,6 +8,7 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 
+@SuppressLint("SetJavaScriptEnabled")
 open class RequestInspectorWebViewClient @JvmOverloads constructor(
     webView: WebView,
     private val options: RequestInspectorOptions = RequestInspectorOptions()
@@ -15,6 +17,9 @@ open class RequestInspectorWebViewClient @JvmOverloads constructor(
     private val interceptionJavascriptInterface = RequestInspectorJavaScriptInterface()
 
     init {
+        val webSettings = webView.settings
+        webSettings.javaScriptEnabled = true
+        webSettings.domStorageEnabled = true
         webView.addJavascriptInterface(interceptionJavascriptInterface, "RequestInspection")
     }
 
