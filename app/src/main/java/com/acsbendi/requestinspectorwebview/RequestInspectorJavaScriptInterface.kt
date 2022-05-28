@@ -11,7 +11,7 @@ internal class RequestInspectorJavaScriptInterface {
 
     fun findRecordedRequestForUrl(url: String): RecordedRequest? {
         return recordedRequests.find { recordedRequest ->
-            recordedRequest.url == url
+            url.contains(recordedRequest.url)
         }
     }
 
@@ -79,6 +79,14 @@ internal class RequestInspectorJavaScriptInterface {
         private const val LOG_TAG = "RequestInspectorJs"
         @Language("JS")
         private const val JAVASCRIPT_INTERCEPTION_CODE = """
+function getFullUrl(url) {
+    if (url.startsWith("/")) {
+        return location.protocol + '//' + location.host + url;
+    } else {
+        return url;
+    }
+}
+
 function recordFormSubmission(form) {
     var jsonArr = [];
     for (i = 0; i < form.elements.length; i++) {
@@ -93,13 +101,13 @@ function recordFormSubmission(form) {
         });
     }
 
-    const path = form.attributes['action'] === undefined ? "" : form.attributes['action'].nodeValue;
+    const path = form.attributes['action'] === undefined ? "/" : form.attributes['action'].nodeValue;
     const method = form.attributes['method'] === undefined ? "GET" : form.attributes['method'].nodeValue;
-    const host = location.protocol + '//' + location.host;
+    const url = getFullUrl(path);
     const encType = form.attributes['enctype'] === undefined ? null : form.attributes['enctype'].nodeValue;
     const err = new Error();
     RequestInspection.recordFormSubmission(
-        host + path,
+        url,
         method,
         JSON.stringify(jsonArr),
         "",
@@ -136,9 +144,10 @@ XMLHttpRequest.prototype.setRequestHeader = function (header, value) {
 };
 XMLHttpRequest.prototype._send = XMLHttpRequest.prototype.send;
 XMLHttpRequest.prototype.send = function (body) {
-    let err = new Error();
+    const err = new Error();
+    const url = getFullUrl(xmlhttpRequestUrl);
     RequestInspection.recordXhr(
-        xmlhttpRequestUrl,
+        url,
         lastXmlhttpRequestPrototypeMethod,
         body,
         xmlhttpRequestHeaders,
@@ -152,12 +161,13 @@ XMLHttpRequest.prototype.send = function (body) {
 
 window._fetch = window.fetch;
 window.fetch = function () {
-    const url = arguments[1] && 'url' in arguments[1] ? arguments[1]['url'] : "";
+    const url = arguments[1] && 'url' in arguments[1] ? arguments[1]['url'] : "/";
+    const fullUrl = getFullUrl(url);
     const method = arguments[1] && 'method' in arguments[1] ? arguments[1]['method'] : "GET";
     const body = arguments[1] && 'body' in arguments[1] ? arguments[1]['body'] : "";
     const headers = JSON.stringify(arguments[1] && 'headers' in arguments[1] ? arguments[1]['headers'] : {});
     let err = new Error();
-    RequestInspection.recordFetch(url, method, body, headers, err.stack);
+    RequestInspection.recordFetch(fullUrl, method, body, headers, err.stack);
     return window._fetch.apply(this, arguments);
 }
         """
