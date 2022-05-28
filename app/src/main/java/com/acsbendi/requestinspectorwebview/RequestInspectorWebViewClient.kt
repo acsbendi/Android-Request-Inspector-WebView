@@ -2,7 +2,6 @@ package com.acsbendi.requestinspectorwebview
 
 import android.graphics.Bitmap
 import android.util.Log
-import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
@@ -23,12 +22,21 @@ open class RequestInspectorWebViewClient @JvmOverloads constructor(
         view: WebView,
         request: WebResourceRequest
     ): WebResourceResponse? {
-        Log.i(LOG_TAG, "Received request: " + request.toJsonStringWithCookies())
         val recordedRequest = interceptionJavascriptInterface.findRecordedRequestForUrl(
             request.url.toString()
         )
-        Log.i(LOG_TAG, "Corresponding recorded request: $recordedRequest")
+        val webViewRequest = WebViewRequest.create(request, recordedRequest)
+        onWebViewRequest(webViewRequest)
         return null
+    }
+
+    open fun onWebViewRequest(webViewRequest: WebViewRequest) {
+        logWebViewRequest(webViewRequest)
+    }
+
+    @Suppress("MemberVisibilityCanBePrivate")
+    protected fun logWebViewRequest(webViewRequest: WebViewRequest) {
+        Log.i(LOG_TAG, "Sending request from WebView: $webViewRequest")
     }
 
     override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
@@ -38,19 +46,6 @@ open class RequestInspectorWebViewClient @JvmOverloads constructor(
             options.extraJavaScriptToInject
         )
         super.onPageStarted(view, url, favicon)
-    }
-
-    private fun WebResourceRequest.toJsonStringWithCookies(): String {
-        val cookies = CookieManager.getInstance().getCookie(url.toString())
-        val headers = HashMap(requestHeaders)
-        headers["Cookie"] = cookies
-        return "{ " +
-                "\"url\": \"" + url.toString().replace("\"", "\\\"") + '"' +
-                ", \"method\": \"" + method.replace("\"", "\\\"") + '"' +
-                ", \"isForMainFrame\": " + isForMainFrame +
-                ", \"hasGesture\": " + hasGesture() +
-                ", \"headers\": \"" + headers.toString().replace("\"", "\\\"") + '"' +
-                " }"
     }
 
     companion object {

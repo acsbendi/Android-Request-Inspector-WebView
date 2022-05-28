@@ -19,12 +19,8 @@ internal class RequestInspectorJavaScriptInterface {
         }
     }
 
-    enum class RequestType {
-        FETCH, XML_HTTP, FORM
-    }
-
     data class RecordedRequest(
-        val type: RequestType,
+        val type: WebViewRequestType,
         val url: String,
         val method: String,
         val body: String,
@@ -80,7 +76,7 @@ internal class RequestInspectorJavaScriptInterface {
 
         Log.i(LOG_TAG, "Recorded form submission from JavaScript")
         recordedRequests.add(
-            RecordedRequest(RequestType.FORM, url, method, body, headerMap, trace, enctype)
+            RecordedRequest(WebViewRequestType.FORM, url, method, body, headerMap, trace, enctype)
         )
     }
 
@@ -89,7 +85,7 @@ internal class RequestInspectorJavaScriptInterface {
         Log.i(LOG_TAG, "Recorded XHR from JavaScript")
         val headerMap = getHeadersAsMap(headers)
         recordedRequests.add(
-            RecordedRequest(RequestType.XML_HTTP, url, method, body, headerMap, trace, null)
+            RecordedRequest(WebViewRequestType.XML_HTTP, url, method, body, headerMap, trace, null)
         )
     }
 
@@ -98,7 +94,7 @@ internal class RequestInspectorJavaScriptInterface {
         Log.i(LOG_TAG, "Recorded fetch from JavaScript")
         val headerMap = getHeadersAsMap(headers)
         recordedRequests.add(
-            RecordedRequest(RequestType.FETCH, url, method, body, headerMap, trace, null)
+            RecordedRequest(WebViewRequestType.FETCH, url, method, body, headerMap, trace, null)
         )
     }
 
