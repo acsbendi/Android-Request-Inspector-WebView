@@ -1,16 +1,16 @@
 package com.acsbendi.requestinspectorwebview
 
-import android.content.Context
 import android.util.Log
 import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import java.util.*
 
-class RequestInspectorWebView(context: Context) : WebView(context) {
+class RequestInspectorWebViewClient() : WebViewClient() {
 
-    fun shouldInterceptRequest(
+    override fun shouldInterceptRequest(
         view: WebView,
         request: WebResourceRequest
     ): WebResourceResponse? {
