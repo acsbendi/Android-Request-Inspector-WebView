@@ -162,9 +162,9 @@ window.fetch = function () {
 }
         """
 
-        fun enableInterception(webView: WebView) {
+        fun enableInterception(webView: WebView, extraJavaScriptToInject: String) {
             webView.evaluateJavascript(
-                "javascript: $JAVASCRIPT_INTERCEPTION_CODE",
+                "javascript: $JAVASCRIPT_INTERCEPTION_CODE\n$extraJavaScriptToInject",
                 null
             )
         }

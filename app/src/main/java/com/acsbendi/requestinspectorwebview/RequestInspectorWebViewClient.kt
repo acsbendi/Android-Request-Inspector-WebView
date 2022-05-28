@@ -8,7 +8,10 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 
-class RequestInspectorWebViewClient(webView: WebView) : WebViewClient() {
+class RequestInspectorWebViewClient @JvmOverloads constructor(
+    webView: WebView,
+    private val options: RequestInspectorOptions = RequestInspectorOptions()
+) : WebViewClient() {
 
     init {
         val interceptionJavascriptInterface = RequestInspectorJavaScriptInterface()
@@ -25,7 +28,10 @@ class RequestInspectorWebViewClient(webView: WebView) : WebViewClient() {
 
     override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
         Log.i(LOG_TAG, "Page started loading, enabling request inspection. URL: $url")
-        RequestInspectorJavaScriptInterface.enableInterception(view)
+        RequestInspectorJavaScriptInterface.enableInterception(
+            view,
+            options.extraJavaScriptToInject
+        )
         super.onPageStarted(view, url, favicon)
     }
 
