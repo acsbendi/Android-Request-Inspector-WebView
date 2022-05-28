@@ -20,9 +20,14 @@ data class WebViewRequest(
         val headersString = headers.entries.joinToString("\n", "\n") { (key, value) ->
             "                $key: $value"
         }
-        val traceWithIndent = trace.split("\n").joinToString("\n", "\n") {
-            "               ${it.trim()}"
-        }
+        val traceWithIndent =
+            trace
+                .split("\n", "at ")
+                // Remove the first line that always says "Error"
+                .drop(1)
+                .joinToString("\n", "\n") {
+                    "               ${it.trim()}"
+                }
         return """
             Type: $type
             URL: $url
