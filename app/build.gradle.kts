@@ -4,8 +4,10 @@ plugins {
     `maven-publish`
 }
 
+val currentVersion = "0.0.1"
+
 group = "com.acsbendi"
-version = "0.0.1"
+version = currentVersion
 
 android {
     compileSdk = 31
@@ -31,6 +33,20 @@ android {
     publishing {
         singleVariant("release") {
             withSourcesJar()
+        }
+    }
+}
+
+publishing {
+    publications {
+        register<MavenPublication>("release") {
+            groupId = group as String
+            artifactId = "requestinspectorwebview"
+            version = currentVersion
+
+            afterEvaluate {
+                from(components["release"])
+            }
         }
     }
 }
