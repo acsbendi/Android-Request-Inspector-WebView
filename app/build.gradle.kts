@@ -8,6 +8,7 @@ version = "0.0.1"
 
 android {
     compileSdk = 31
+    namespace = "com.acsbendi.requestinspectorwebview"
 
     defaultConfig {
         minSdk = 21
