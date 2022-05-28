@@ -18,7 +18,7 @@ data class WebViewRequest(
 ) {
     override fun toString(): String {
         val headersString = headers.entries.joinToString("\n", "\n") { (key, value) ->
-            "                $key: $value"
+            "       $key: $value"
         }
         val traceWithIndent =
             trace
@@ -26,19 +26,19 @@ data class WebViewRequest(
                 // Remove the first line that always says "Error"
                 .drop(1)
                 .joinToString("\n", "\n") {
-                    "               ${it.trim()}"
+                    "    ${it.trim()}"
                 }
         return """
-            Type: $type
-            URL: $url
-            Method: $method
-            Body: $body
-            Headers: $headersString
-            Trace: $traceWithIndent
-            Encoding type (form submissions only): $enctype
-            Is for main frame? $isForMainFrame
-            Is redirect? $isRedirect
-            Has gesture? $hasGesture
+  Type: $type
+  URL: $url
+  Method: $method
+  Body: $body
+  Headers: $headersString
+  Trace: $traceWithIndent
+  Encoding type (form submissions only): $enctype
+  Is for main frame? $isForMainFrame
+  Is redirect? $isRedirect
+  Has gesture? $hasGesture
         """
     }
 
