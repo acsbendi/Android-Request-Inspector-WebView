@@ -6,8 +6,8 @@ import android.webkit.WebView
 import org.intellij.lang.annotations.Language
 import org.json.JSONArray
 import org.json.JSONObject
-import java.lang.StringBuilder
 import java.net.URLEncoder
+import java.util.Locale
 
 internal class RequestInspectorJavaScriptInterface {
 
@@ -28,7 +28,7 @@ internal class RequestInspectorJavaScriptInterface {
         val url: String,
         val method: String,
         val body: String,
-        val headers: String,
+        val headers: Map<String, String>,
         val trace: String,
         val enctype: String?
     ) {
@@ -42,7 +42,7 @@ internal class RequestInspectorJavaScriptInterface {
                     ", \"url\": \"" + url.replace("\"", "\\\"") + '"' +
                     ", \"method\": \"" + method.replace("\"", "\\\"") + '"' +
                     ", \"body\": \"" + body.replace("\"", "\\\"") + '"' +
-                    ", \"headers\": \"" + headers.replace("\"", "\\\"") + '"' +
+                    ", \"headers\": \"" + headers.toString().replace("\"", "\\\"") + '"' +
                     ", \"trace\": \"" + trace.replace("\"", "\\\"") + '"' +
                     ", \"enctype\": " + enctypeString +
                     " }"
@@ -59,14 +59,14 @@ internal class RequestInspectorJavaScriptInterface {
         enctype: String?
     ) {
         val formParameterJsonArray = JSONArray(formParameterList)
-        var modifiedHeaders = headers
+        val headerMap = getHeadersAsMap(headers)
 
         val body = when (enctype) {
             "application/x-www-form-urlencoded" -> {
                 getUrlEncodedFormBody(formParameterJsonArray)
             }
             "multipart/form-data" -> {
-                modifiedHeaders += "\ncontent-type: multipart/form-data; boundary=$MULTIPART_FORM_BOUNDARY"
+                headerMap["content-type"] = "multipart/form-data; boundary=$MULTIPART_FORM_BOUNDARY"
                 getMultiPartFormBody(formParameterJsonArray)
             }
             "text/plain" -> {
@@ -80,24 +80,36 @@ internal class RequestInspectorJavaScriptInterface {
 
         Log.i(LOG_TAG, "Recorded form submission from JavaScript")
         recordedRequests.add(
-            RecordedRequest(RequestType.FORM, url, method, body, modifiedHeaders, trace, enctype)
+            RecordedRequest(RequestType.FORM, url, method, body, headerMap, trace, enctype)
         )
     }
 
     @JavascriptInterface
     fun recordXhr(url: String, method: String, body: String, headers: String, trace: String) {
         Log.i(LOG_TAG, "Recorded XHR from JavaScript")
+        val headerMap = getHeadersAsMap(headers)
         recordedRequests.add(
-            RecordedRequest(RequestType.XML_HTTP, url, method, body, headers, trace, null)
+            RecordedRequest(RequestType.XML_HTTP, url, method, body, headerMap, trace, null)
         )
     }
 
     @JavascriptInterface
     fun recordFetch(url: String, method: String, body: String, headers: String, trace: String) {
         Log.i(LOG_TAG, "Recorded fetch from JavaScript")
+        val headerMap = getHeadersAsMap(headers)
         recordedRequests.add(
-            RecordedRequest(RequestType.FETCH, url, method, body, headers, trace, null)
+            RecordedRequest(RequestType.FETCH, url, method, body, headerMap, trace, null)
         )
+    }
+
+    private fun getHeadersAsMap(headersString: String): MutableMap<String, String> {
+        val headersObject = JSONObject(headersString)
+        val map = HashMap<String, String>()
+        for (key in headersObject.keys()) {
+            val lowercaseHeader = key.lowercase(Locale.getDefault())
+            map[lowercaseHeader] = headersObject.getString(key)
+        }
+        return map
     }
 
     private fun getUrlEncodedFormBody(formParameterJsonArray: JSONArray): String {
@@ -209,7 +221,7 @@ window.addEventListener('submit', function (submitEvent) {
 }, true);
 
 let lastXmlhttpRequestPrototypeMethod = null;
-let xmlhttpRequestHeaders = "";
+let xmlhttpRequestHeaders = {};
 let xmlhttpRequestUrl = null;
 XMLHttpRequest.prototype._open = XMLHttpRequest.prototype.open;
 XMLHttpRequest.prototype.open = function (method, url, async, user, password) {
@@ -219,7 +231,7 @@ XMLHttpRequest.prototype.open = function (method, url, async, user, password) {
 };
 XMLHttpRequest.prototype._setRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
 XMLHttpRequest.prototype.setRequestHeader = function (header, value) {
-    xmlhttpRequestHeaders += (header + ": " + value + "\n");
+    xmlhttpRequestHeaders[header] = value;
     this._setRequestHeader(header, value);
 };
 XMLHttpRequest.prototype._send = XMLHttpRequest.prototype.send;
@@ -230,12 +242,12 @@ XMLHttpRequest.prototype.send = function (body) {
         url,
         lastXmlhttpRequestPrototypeMethod,
         body,
-        xmlhttpRequestHeaders,
+        JSON.stringify(xmlhttpRequestHeaders),
         err.stack
     );
     lastXmlhttpRequestPrototypeMethod = null;
     xmlhttpRequestUrl = null;
-    xmlhttpRequestHeaders = "";
+    xmlhttpRequestHeaders = {};
     this._send(body);
 };
 
