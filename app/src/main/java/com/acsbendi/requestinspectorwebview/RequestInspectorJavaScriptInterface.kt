@@ -198,7 +198,7 @@ function recordFormSubmission(form) {
         url,
         method,
         JSON.stringify(jsonArr),
-        "",
+        "{}",
         err.stack,
         encType
     );
