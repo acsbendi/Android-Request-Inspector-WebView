@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "Request Inspector WebView"
-include ':app'
+include(":app")
