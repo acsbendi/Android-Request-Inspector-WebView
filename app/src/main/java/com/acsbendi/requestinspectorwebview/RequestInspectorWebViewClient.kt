@@ -18,7 +18,7 @@ open class RequestInspectorWebViewClient @JvmOverloads constructor(
         webView.addJavascriptInterface(interceptionJavascriptInterface, "RequestInspection")
     }
 
-    override fun shouldInterceptRequest(
+    final override fun shouldInterceptRequest(
         view: WebView,
         request: WebResourceRequest
     ): WebResourceResponse? {
@@ -26,12 +26,15 @@ open class RequestInspectorWebViewClient @JvmOverloads constructor(
             request.url.toString()
         )
         val webViewRequest = WebViewRequest.create(request, recordedRequest)
-        onWebViewRequest(webViewRequest)
-        return null
+        return shouldInterceptRequest(view, webViewRequest)
     }
 
-    open fun onWebViewRequest(webViewRequest: WebViewRequest) {
+    open fun shouldInterceptRequest(
+        view: WebView,
+        webViewRequest: WebViewRequest
+    ): WebResourceResponse? {
         logWebViewRequest(webViewRequest)
+        return null
     }
 
     @Suppress("MemberVisibilityCanBePrivate")
