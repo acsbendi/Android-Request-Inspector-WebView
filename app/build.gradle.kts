@@ -3,7 +3,7 @@ plugins {
     kotlin("android")
 }
 
-group = "com.acsbendi.requestinspectorwebview"
+group = "com.acsbendi"
 version = "0.0.1"
 
 android {
