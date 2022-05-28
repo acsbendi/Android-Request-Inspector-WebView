@@ -27,23 +27,7 @@ internal class RequestInspectorJavaScriptInterface {
         val headers: Map<String, String>,
         val trace: String,
         val enctype: String?
-    ) {
-        override fun toString(): String {
-            val enctypeString = if (enctype != null) '"'.toString() + enctype.replace(
-                "\"",
-                "\\\""
-            ) + '"' else "null"
-            return "{ " +
-                    "\"type\": \"" + type.toString().replace("\"", "\\\"") + '"' +
-                    ", \"url\": \"" + url.replace("\"", "\\\"") + '"' +
-                    ", \"method\": \"" + method.replace("\"", "\\\"") + '"' +
-                    ", \"body\": \"" + body.replace("\"", "\\\"") + '"' +
-                    ", \"headers\": \"" + headers.toString().replace("\"", "\\\"") + '"' +
-                    ", \"trace\": \"" + trace.replace("\"", "\\\"") + '"' +
-                    ", \"enctype\": " + enctypeString +
-                    " }"
-        }
-    }
+    )
 
     @JavascriptInterface
     fun recordFormSubmission(
