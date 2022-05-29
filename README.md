@@ -56,7 +56,7 @@ To manually process requests:
 Caveats
 ===
 
-Detailed data (e.g. request body) is not available for requests sent from iframes as it's [not possible to execute JavaScript code iframes in Android WebViews](https://stackoverflow.com/questions/47820169/android-webview-run-javascript-in-all-frames-including-iframes).
+Detailed data (e.g. request body) is not available for requests sent from iframes as it's [not possible to execute JavaScript code in iframes in Android WebViews](https://stackoverflow.com/questions/47820169/android-webview-run-javascript-in-all-frames-including-iframes).
 
 Contributions
 ===
