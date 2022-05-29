@@ -9,7 +9,11 @@ import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.Locale
 
-internal class RequestInspectorJavaScriptInterface {
+internal class RequestInspectorJavaScriptInterface(webView: WebView) {
+
+    init {
+        webView.addJavascriptInterface(this, INTERFACE_NAME)
+    }
 
     private val recordedRequests = ArrayList<RecordedRequest>()
 
@@ -148,6 +152,7 @@ internal class RequestInspectorJavaScriptInterface {
     companion object {
         private const val LOG_TAG = "RequestInspectorJs"
         private const val MULTIPART_FORM_BOUNDARY = "----WebKitFormBoundaryU7CgQs9WnqlZYKs6"
+        private const val INTERFACE_NAME = "RequestInspection"
 
         @Language("JS")
         private const val JAVASCRIPT_INTERCEPTION_CODE = """
@@ -178,7 +183,7 @@ function recordFormSubmission(form) {
     const url = getFullUrl(path);
     const encType = form.attributes['enctype'] === undefined ? "application/x-www-form-urlencoded" : form.attributes['enctype'].nodeValue;
     const err = new Error();
-    RequestInspection.recordFormSubmission(
+    $INTERFACE_NAME.recordFormSubmission(
         url,
         method,
         JSON.stringify(jsonArr),
@@ -218,7 +223,7 @@ XMLHttpRequest.prototype._send = XMLHttpRequest.prototype.send;
 XMLHttpRequest.prototype.send = function (body) {
     const err = new Error();
     const url = getFullUrl(xmlhttpRequestUrl);
-    RequestInspection.recordXhr(
+    $INTERFACE_NAME.recordXhr(
         url,
         lastXmlhttpRequestPrototypeMethod,
         body || "",
@@ -239,12 +244,12 @@ window.fetch = function () {
     const body = arguments[1] && 'body' in arguments[1] ? arguments[1]['body'] : "";
     const headers = JSON.stringify(arguments[1] && 'headers' in arguments[1] ? arguments[1]['headers'] : {});
     let err = new Error();
-    RequestInspection.recordFetch(fullUrl, method, body, headers, err.stack);
+    $INTERFACE_NAME.recordFetch(fullUrl, method, body, headers, err.stack);
     return window._fetch.apply(this, arguments);
 }
         """
 
-        fun enableInterception(webView: WebView, extraJavaScriptToInject: String) {
+        fun enabledRequestInspection(webView: WebView, extraJavaScriptToInject: String) {
             webView.evaluateJavascript(
                 "javascript: $JAVASCRIPT_INTERCEPTION_CODE\n$extraJavaScriptToInject",
                 null

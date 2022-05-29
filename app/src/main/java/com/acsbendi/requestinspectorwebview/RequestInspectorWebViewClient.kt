@@ -14,13 +14,12 @@ open class RequestInspectorWebViewClient @JvmOverloads constructor(
     private val options: RequestInspectorOptions = RequestInspectorOptions()
 ) : WebViewClient() {
 
-    private val interceptionJavascriptInterface = RequestInspectorJavaScriptInterface()
+    private val interceptionJavascriptInterface = RequestInspectorJavaScriptInterface(webView)
 
     init {
         val webSettings = webView.settings
         webSettings.javaScriptEnabled = true
         webSettings.domStorageEnabled = true
-        webView.addJavascriptInterface(interceptionJavascriptInterface, "RequestInspection")
     }
 
     final override fun shouldInterceptRequest(
@@ -49,7 +48,7 @@ open class RequestInspectorWebViewClient @JvmOverloads constructor(
 
     override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
         Log.i(LOG_TAG, "Page started loading, enabling request inspection. URL: $url")
-        RequestInspectorJavaScriptInterface.enableInterception(
+        RequestInspectorJavaScriptInterface.enabledRequestInspection(
             view,
             options.extraJavaScriptToInject
         )
