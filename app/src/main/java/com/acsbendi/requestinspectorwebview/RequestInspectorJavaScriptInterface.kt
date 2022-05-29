@@ -47,6 +47,7 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
 
         val body = when (enctype) {
             "application/x-www-form-urlencoded" -> {
+                headerMap["content-type"] = enctype
                 getUrlEncodedFormBody(formParameterJsonArray)
             }
             "multipart/form-data" -> {
@@ -54,6 +55,7 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
                 getMultiPartFormBody(formParameterJsonArray)
             }
             "text/plain" -> {
+                headerMap["content-type"] = enctype
                 getPlainTextFormBody(formParameterJsonArray)
             }
             else -> {
