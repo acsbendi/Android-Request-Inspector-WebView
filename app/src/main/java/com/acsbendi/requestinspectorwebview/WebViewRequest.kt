@@ -53,9 +53,15 @@ data class WebViewRequest(
             val headers = HashMap<String, String>()
             headers["cookie"] = cookies
             if (recordedRequest != null) {
-                headers.putAll(recordedRequest.headers)
+                val recordedHeadersInLowercase = recordedRequest.headers.mapKeys { (key, _) ->
+                    key.lowercase()
+                }
+                headers.putAll(recordedHeadersInLowercase)
             }
-            headers.putAll(webResourceRequest.requestHeaders)
+            val requestHeadersInLowercase = webResourceRequest.requestHeaders.mapKeys { (key, _) ->
+                key.lowercase()
+            }
+            headers.putAll(requestHeadersInLowercase)
 
             val isRedirect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 webResourceRequest.isRedirect
