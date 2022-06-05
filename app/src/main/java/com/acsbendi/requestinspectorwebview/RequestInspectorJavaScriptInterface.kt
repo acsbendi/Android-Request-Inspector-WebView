@@ -214,7 +214,7 @@ XMLHttpRequest.prototype._open = XMLHttpRequest.prototype.open;
 XMLHttpRequest.prototype.open = function (method, url, async, user, password) {
     lastXmlhttpRequestPrototypeMethod = method;
     xmlhttpRequestUrl = url;
-    this._open(method, url, async, user, password);
+    this._open(method, url, async || true, user, password);
 };
 XMLHttpRequest.prototype._setRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
 XMLHttpRequest.prototype.setRequestHeader = function (header, value) {
