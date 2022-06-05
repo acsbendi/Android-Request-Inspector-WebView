@@ -4,7 +4,7 @@ plugins {
     `maven-publish`
 }
 
-val currentVersion = "1.0.0"
+val currentVersion = "1.0.1"
 
 group = "com.acsbendi"
 version = currentVersion
