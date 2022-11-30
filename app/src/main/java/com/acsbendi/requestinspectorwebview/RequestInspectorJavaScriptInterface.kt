@@ -18,9 +18,12 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
     private val recordedRequests = ArrayList<RecordedRequest>()
 
     fun findRecordedRequestForUrl(url: String): RecordedRequest? {
-        return recordedRequests.find { recordedRequest ->
-            url.contains(recordedRequest.url)
+        for (i in recordedRequests.indices) {
+            val recordedRequest = recordedRequests[i]
+            if (url.contains(recordedRequest.url))
+                return recordedRequest
         }
+        return null
     }
 
     data class RecordedRequest(
