@@ -8,6 +8,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.Locale
+import java.util.concurrent.CopyOnWriteArrayList
 
 internal class RequestInspectorJavaScriptInterface(webView: WebView) {
 
@@ -15,16 +16,10 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
         webView.addJavascriptInterface(this, INTERFACE_NAME)
     }
 
-    private val recordedRequests = ArrayList<RecordedRequest>()
+    private val recordedRequests = CopyOnWriteArrayList<RecordedRequest>()
 
-    fun findRecordedRequestForUrl(url: String): RecordedRequest? {
-        for (i in recordedRequests.indices) {
-            val recordedRequest = recordedRequests[i]
-            if (url.contains(recordedRequest.url))
-                return recordedRequest
-        }
-        return null
-    }
+    fun findRecordedRequestForUrl(url: String) =
+        recordedRequests.find { url.contains(it.url) }
 
     data class RecordedRequest(
         val type: WebViewRequestType,
