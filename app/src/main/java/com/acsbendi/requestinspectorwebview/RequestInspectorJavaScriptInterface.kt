@@ -18,8 +18,10 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
     private val recordedRequests = ArrayList<RecordedRequest>()
 
     fun findRecordedRequestForUrl(url: String): RecordedRequest? {
-        return recordedRequests.find { recordedRequest ->
-            url.contains(recordedRequest.url)
+        return synchronized(recordedRequests) {
+            recordedRequests.find { recordedRequest ->
+                url.contains(recordedRequest.url)
+            }
         }
     }
 
@@ -65,7 +67,7 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
         }
 
         Log.i(LOG_TAG, "Recorded form submission from JavaScript")
-        recordedRequests.add(
+        addRecordedRequest(
             RecordedRequest(WebViewRequestType.FORM, url, method, body, headerMap, trace, enctype)
         )
     }
@@ -74,7 +76,7 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
     fun recordXhr(url: String, method: String, body: String, headers: String, trace: String) {
         Log.i(LOG_TAG, "Recorded XHR from JavaScript")
         val headerMap = getHeadersAsMap(headers)
-        recordedRequests.add(
+        addRecordedRequest(
             RecordedRequest(WebViewRequestType.XML_HTTP, url, method, body, headerMap, trace, null)
         )
     }
@@ -83,9 +85,15 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
     fun recordFetch(url: String, method: String, body: String, headers: String, trace: String) {
         Log.i(LOG_TAG, "Recorded fetch from JavaScript")
         val headerMap = getHeadersAsMap(headers)
-        recordedRequests.add(
+        addRecordedRequest(
             RecordedRequest(WebViewRequestType.FETCH, url, method, body, headerMap, trace, null)
         )
+    }
+
+    private fun addRecordedRequest(recordedRequest: RecordedRequest) {
+        synchronized(recordedRequests) {
+            recordedRequests.add(recordedRequest)
+        }
     }
 
     private fun getHeadersAsMap(headersString: String): MutableMap<String, String> {
