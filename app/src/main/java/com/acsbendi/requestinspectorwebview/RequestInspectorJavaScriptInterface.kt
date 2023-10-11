@@ -30,6 +30,7 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
         val url: String,
         val method: String,
         val body: String,
+        val formParameters: Map<String, String>,
         val headers: Map<String, String>,
         val trace: String,
         val enctype: String?
@@ -46,20 +47,24 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
     ) {
         val formParameterJsonArray = JSONArray(formParameterList)
         val headerMap = getHeadersAsMap(headers)
+        val formParameterMap = getFormParametersAsMap(formParameterJsonArray)
 
         val body = when (enctype) {
             "application/x-www-form-urlencoded" -> {
                 headerMap["content-type"] = enctype
                 getUrlEncodedFormBody(formParameterJsonArray)
             }
+
             "multipart/form-data" -> {
                 headerMap["content-type"] = "multipart/form-data; boundary=$MULTIPART_FORM_BOUNDARY"
                 getMultiPartFormBody(formParameterJsonArray)
             }
+
             "text/plain" -> {
                 headerMap["content-type"] = enctype
                 getPlainTextFormBody(formParameterJsonArray)
             }
+
             else -> {
                 Log.e(LOG_TAG, "Incorrect encoding received from JavaScript: $enctype")
                 ""
@@ -68,7 +73,16 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
 
         Log.i(LOG_TAG, "Recorded form submission from JavaScript")
         addRecordedRequest(
-            RecordedRequest(WebViewRequestType.FORM, url, method, body, headerMap, trace, enctype)
+            RecordedRequest(
+                WebViewRequestType.FORM,
+                url,
+                method,
+                body,
+                formParameterMap,
+                headerMap,
+                trace,
+                enctype
+            )
         )
     }
 
@@ -77,7 +91,16 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
         Log.i(LOG_TAG, "Recorded XHR from JavaScript")
         val headerMap = getHeadersAsMap(headers)
         addRecordedRequest(
-            RecordedRequest(WebViewRequestType.XML_HTTP, url, method, body, headerMap, trace, null)
+            RecordedRequest(
+                WebViewRequestType.XML_HTTP,
+                url,
+                method,
+                body,
+                mapOf(),
+                headerMap,
+                trace,
+                null
+            )
         )
     }
 
@@ -86,7 +109,16 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
         Log.i(LOG_TAG, "Recorded fetch from JavaScript")
         val headerMap = getHeadersAsMap(headers)
         addRecordedRequest(
-            RecordedRequest(WebViewRequestType.FETCH, url, method, body, headerMap, trace, null)
+            RecordedRequest(
+                WebViewRequestType.FETCH,
+                url,
+                method,
+                body,
+                mapOf(),
+                headerMap,
+                trace,
+                null
+            )
         )
     }
 
@@ -105,6 +137,18 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
         }
         return map
     }
+
+    private fun getFormParametersAsMap(formParameterJsonArray: JSONArray): Map<String, String> {
+        val map = HashMap<String, String>()
+        repeat(formParameterJsonArray.length()) { i ->
+            val formParameter = formParameterJsonArray.get(i) as JSONObject
+            val name = formParameter.getString("name")
+            val value = formParameter.getString("value")
+            map[name] = value
+        }
+        return map
+    }
+
 
     private fun getUrlEncodedFormBody(formParameterJsonArray: JSONArray): String {
         val resultStringBuilder = StringBuilder()

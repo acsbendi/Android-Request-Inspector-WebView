@@ -9,6 +9,7 @@ data class WebViewRequest(
     val url: String,
     val method: String,
     val body: String,
+    val formParameters: Map<String, String>,
     val headers: Map<String, String>,
     val trace: String,
     val enctype: String?,
@@ -18,6 +19,9 @@ data class WebViewRequest(
 ) {
     override fun toString(): String {
         val headersString = headers.entries.joinToString("\n", "\n") { (key, value) ->
+            "       $key: $value"
+        }
+        val formParametersString = formParameters.entries.joinToString("\n", "\n") { (key, value) ->
             "       $key: $value"
         }
         val traceWithIndent =
@@ -34,6 +38,7 @@ data class WebViewRequest(
   Method: $method
   Body: $body
   Headers: $headersString
+  FormParameters: $formParametersString
   Trace: $traceWithIndent
   Encoding type (form submissions only): $enctype
   Is for main frame? $isForMainFrame
@@ -78,7 +83,8 @@ data class WebViewRequest(
                 enctype = recordedRequest?.enctype,
                 isForMainFrame = webResourceRequest.isForMainFrame,
                 isRedirect = isRedirect,
-                hasGesture = webResourceRequest.hasGesture()
+                hasGesture = webResourceRequest.hasGesture(),
+                formParameters = recordedRequest?.formParameters ?: mapOf()
             )
         }
     }
