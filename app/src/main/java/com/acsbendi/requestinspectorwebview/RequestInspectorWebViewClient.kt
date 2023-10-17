@@ -27,7 +27,8 @@ open class RequestInspectorWebViewClient @JvmOverloads constructor(
         request: WebResourceRequest
     ): WebResourceResponse? {
         val recordedRequest = interceptionJavascriptInterface.findRecordedRequestForUrl(
-            request.url.toString()
+            request.url.toString(),
+            request.method,
         )
         val webViewRequest = WebViewRequest.create(request, recordedRequest)
         return shouldInterceptRequest(view, webViewRequest)
