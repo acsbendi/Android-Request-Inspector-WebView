@@ -9,6 +9,7 @@ import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.Locale
 
+
 internal class RequestInspectorJavaScriptInterface(webView: WebView) {
 
     init {
@@ -17,10 +18,10 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
 
     private val recordedRequests = ArrayList<RecordedRequest>()
 
-    fun findRecordedRequestForUrl(url: String): RecordedRequest? {
+    fun findRecordedRequestForUrl(url: String, method: String): RecordedRequest? {
         return synchronized(recordedRequests) {
             recordedRequests.find { recordedRequest ->
-                url.contains(recordedRequest.url)
+                url == recordedRequest.url && method == recordedRequest.method
             }
         }
     }
@@ -34,7 +35,20 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
         val headers: Map<String, String>,
         val trace: String,
         val enctype: String?
-    )
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (other !is RecordedRequest) return super.equals(other)
+            return url == other.url
+                    && method == other.method
+                    && body == other.body
+                    && headers == other.headers
+                    && formParameters == other.formParameters
+        }
+
+        override fun hashCode(): Int {
+            return super.hashCode()
+        }
+    }
 
     @JavascriptInterface
     fun recordFormSubmission(
@@ -124,7 +138,8 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
 
     private fun addRecordedRequest(recordedRequest: RecordedRequest) {
         synchronized(recordedRequests) {
-            recordedRequests.add(recordedRequest)
+            if (!recordedRequests.equals(recordedRequest))
+                recordedRequests.add(recordedRequest)
         }
     }
 
@@ -293,7 +308,7 @@ XMLHttpRequest.prototype.send = function (body) {
 
 window._fetch = window.fetch;
 window.fetch = function () {
-    const url = arguments[1] && 'url' in arguments[1] ? arguments[1]['url'] : "/";
+    const url = arguments[0];
     const fullUrl = getFullUrl(url);
     const method = arguments[1] && 'method' in arguments[1] ? arguments[1]['method'] : "GET";
     const body = arguments[1] && 'body' in arguments[1] ? arguments[1]['body'] : "";
