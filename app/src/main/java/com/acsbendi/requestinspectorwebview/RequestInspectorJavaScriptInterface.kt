@@ -293,7 +293,7 @@ XMLHttpRequest.prototype.send = function (body) {
 
 window._fetch = window.fetch;
 window.fetch = function () {
-    const url = arguments[1] && 'url' in arguments[1] ? arguments[1]['url'] : "/";
+    const url = arguments[0];
     const fullUrl = getFullUrl(url);
     const method = arguments[1] && 'method' in arguments[1] ? arguments[1]['method'] : "GET";
     const body = arguments[1] && 'body' in arguments[1] ? arguments[1]['body'] : "";
