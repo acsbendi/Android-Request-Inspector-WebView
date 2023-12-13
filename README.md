@@ -2,7 +2,7 @@
 
 Inspect and intercept full HTTP requests (including all headers, cookies and body) sent from Android WebViews.
 
-This project is inspired by [android-post-webview](https://github.com/KeejOow/android-post-webview) and [request_data_webviewclient](https://github.com/KonstantinSchubert/request_data_webviewclient) and draws some code from both projects.
+This project is inspired by [android-post-webview](https://github.com/KeejOow/android-post-webview) and [request_data_webviewclient](https://github.com/KonstantinSchubert/request_data_webviewclient) and some code was taken from both projects.
 
 Installation
 ===
@@ -11,10 +11,9 @@ Installation
 
 ```gradle
 allprojects {
-	repositories {
-		...
-		maven { url 'https://jitpack.io' }
-	}
+    repositories {
+        maven { url 'https://jitpack.io' }
+    }
 }
 ```
 
@@ -22,7 +21,7 @@ allprojects {
 
 ```gradle
 dependencies {
-        implementation 'com.github.acsbendi:Android-Request-Inspector-WebView:1.0.5'
+    implementation 'com.github.acsbendi:Android-Request-Inspector-WebView:1.0.5'
 }
 ```
 
@@ -53,15 +52,15 @@ To manually process requests:
     }
 ```
 
-Caveats
+Known limitations
 ===
 
-Detailed data (e.g. request body) is not available for requests sent from iframes as it's [not possible to execute JavaScript code in iframes in Android WebViews](https://stackoverflow.com/questions/47820169/android-webview-run-javascript-in-all-frames-including-iframes).
+Detailed data (e.g. request body) is not available for requests sent from iframes as it's [not possible to execute JavaScript code in iframes in Android WebViews](https://stackoverflow.com/questions/47820169/android-webview-run-javascript-in-all-frames-including-iframes). One possible workaround to still inspect the requests sent from a specific iframe is to load its URL into a different `WebView` and attach `RequestInspectorWebViewClient` to that.
 
 Contributions
 ===
 
-All feedback, PRs and issues are welcome!
+All feedback, PRs, and issues are welcome!
 
 License
 ===
