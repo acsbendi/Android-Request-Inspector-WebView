@@ -19,6 +19,8 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
 
     fun findRecordedRequestForUrl(url: String): RecordedRequest? {
         return synchronized(recordedRequests) {
+            // use findLast instead of find to find the last added query matching a URL -
+            // they are included at the end of the list when written.
             recordedRequests.findLast { recordedRequest ->
                 // Added search by exact URL to find the actual request body
                 url == recordedRequest.url
