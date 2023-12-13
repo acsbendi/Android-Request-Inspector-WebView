@@ -299,12 +299,25 @@ XMLHttpRequest.prototype.send = function (body) {
 
 window._fetch = window.fetch;
 window.fetch = function () {
-    const url = arguments[0];
+    const firstArgument = arguments[0];
+    let url;
+    let method;
+    let body;
+    let headers;
+    if (typeof firstArgument === 'string') {
+        url = firstArgument;
+        method = arguments[1] && 'method' in arguments[1] ? arguments[1]['method'] : "GET";
+        body = arguments[1] && 'body' in arguments[1] ? arguments[1]['body'] : "";
+        headers = JSON.stringify(arguments[1] && 'headers' in arguments[1] ? arguments[1]['headers'] : {});
+    } else {
+        // Request object
+        url = firstArgument.url;
+        method = firstArgument.method;
+        body = firstArgument.body;
+        headers = JSON.stringify(Object.fromEntries(firstArgument.headers.entries()));
+    }
     const fullUrl = getFullUrl(url);
-    const method = arguments[1] && 'method' in arguments[1] ? arguments[1]['method'] : "GET";
-    const body = arguments[1] && 'body' in arguments[1] ? arguments[1]['body'] : "";
-    const headers = JSON.stringify(arguments[1] && 'headers' in arguments[1] ? arguments[1]['headers'] : {});
-    let err = new Error();
+    const err = new Error();
     $INTERFACE_NAME.recordFetch(fullUrl, method, body, headers, err.stack);
     return window._fetch.apply(this, arguments);
 }
