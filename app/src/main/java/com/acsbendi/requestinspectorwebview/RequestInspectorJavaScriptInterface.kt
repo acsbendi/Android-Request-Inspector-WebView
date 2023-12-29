@@ -179,11 +179,11 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
             val formParameter = formParameterJsonArray.get(i) as JSONObject
             val name = formParameter.getString("name")
             val value = formParameter.getString("value")
-            val checked = formParameter.getString("checked")
+            val checked = formParameter.optBoolean("checked")
             val type = formParameter.getString("type")
 
             if (type == "radio") {
-                if (checked == "checked") {
+                if (checked) {
                     resultStringBuilder.append("--")
                     resultStringBuilder.append(MULTIPART_FORM_BOUNDARY)
                     resultStringBuilder.append("\n")
@@ -215,13 +215,13 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
             val formParameter = formParameterJsonArray.get(i) as JSONObject
             val name = formParameter.getString("name")
             val value = formParameter.getString("value")
-            val checked = formParameter.getString("checked")
+            val checked = formParameter.optBoolean("checked")
             val type = formParameter.getString("type")
             if (i != 0) {
                 resultStringBuilder.append("\n")
             }
             if (type == "radio") {
-                if (checked == "checked") {
+                if (checked) {
                     resultStringBuilder.append(name)
                     resultStringBuilder.append("=")
                     resultStringBuilder.append(value)
