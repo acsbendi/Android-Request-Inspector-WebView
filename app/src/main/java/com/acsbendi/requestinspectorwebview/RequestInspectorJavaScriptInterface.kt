@@ -157,7 +157,6 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
             } else {
                 map[name] = value
             }
-            map[name] = value
         }
         return map
     }
