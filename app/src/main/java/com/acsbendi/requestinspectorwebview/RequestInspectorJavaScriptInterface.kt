@@ -224,7 +224,7 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
             val checked = formParameter.optBoolean("checked")
             val type = formParameter.getString("type")
 
-            if (type == "radio" && !checked) {
+            if ((type == "radio" || type == "checkbox") && !checked) {
             } else {
                 if (i != 0) {
                     resultStringBuilder.append("\n")
