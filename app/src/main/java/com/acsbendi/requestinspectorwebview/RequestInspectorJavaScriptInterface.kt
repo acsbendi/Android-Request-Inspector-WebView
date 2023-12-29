@@ -150,6 +150,13 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
             val formParameter = formParameterJsonArray.get(i) as JSONObject
             val name = formParameter.getString("name")
             val value = formParameter.getString("value")
+            val checked = formParameter.optBoolean("checked")
+            val type = formParameter.getString("type")
+            if (type == "radio" && !checked) {
+
+            } else {
+                map[name] = value
+            }
             map[name] = value
         }
         return map
