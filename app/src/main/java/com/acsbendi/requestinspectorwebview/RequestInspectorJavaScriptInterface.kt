@@ -172,12 +172,13 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
             val checked = formParameter.optBoolean("checked")
             val type = formParameter.getString("type")
             val encodedValue = URLEncoder.encode(value, "UTF-8")
-            if (i != 0) {
-                resultStringBuilder.append("&")
-            }
+
             if (type == "radio" && !checked) {
 
             } else {
+                if (i != 0) {
+                    resultStringBuilder.append("&")
+                }
                 resultStringBuilder.append(name)
                 resultStringBuilder.append("=")
                 resultStringBuilder.append(encodedValue)
@@ -197,16 +198,7 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
             val checked = formParameter.optBoolean("checked")
             val type = formParameter.getString("type")
 
-            if (type == "radio") {
-                if (checked) {
-                    resultStringBuilder.append("--")
-                    resultStringBuilder.append(MULTIPART_FORM_BOUNDARY)
-                    resultStringBuilder.append("\n")
-                    resultStringBuilder.append("Content-Disposition: form-data; name=\"$name\"")
-                    resultStringBuilder.append("\n\n")
-                    resultStringBuilder.append(value)
-                    resultStringBuilder.append("\n")
-                }
+            if (type == "radio"&&!checked) {
             } else {
                 resultStringBuilder.append("--")
                 resultStringBuilder.append(MULTIPART_FORM_BOUNDARY)
@@ -232,16 +224,12 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
             val value = formParameter.getString("value")
             val checked = formParameter.optBoolean("checked")
             val type = formParameter.getString("type")
-            if (i != 0) {
-                resultStringBuilder.append("\n")
-            }
-            if (type == "radio") {
-                if (checked) {
-                    resultStringBuilder.append(name)
-                    resultStringBuilder.append("=")
-                    resultStringBuilder.append(value)
-                }
+
+            if (type == "radio"&&!checked) {
             } else {
+                if (i != 0) {
+                    resultStringBuilder.append("\n")
+                }
                 resultStringBuilder.append(name)
                 resultStringBuilder.append("=")
                 resultStringBuilder.append(value)
