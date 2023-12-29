@@ -179,13 +179,29 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
             val formParameter = formParameterJsonArray.get(i) as JSONObject
             val name = formParameter.getString("name")
             val value = formParameter.getString("value")
-            resultStringBuilder.append("--")
-            resultStringBuilder.append(MULTIPART_FORM_BOUNDARY)
-            resultStringBuilder.append("\n")
-            resultStringBuilder.append("Content-Disposition: form-data; name=\"$name\"")
-            resultStringBuilder.append("\n\n")
-            resultStringBuilder.append(value)
-            resultStringBuilder.append("\n")
+            val checked = formParameter.getString("checked")
+            val type = formParameter.getString("type")
+
+            if (type == "radio") {
+                if (checked == "checked") {
+                    resultStringBuilder.append("--")
+                    resultStringBuilder.append(MULTIPART_FORM_BOUNDARY)
+                    resultStringBuilder.append("\n")
+                    resultStringBuilder.append("Content-Disposition: form-data; name=\"$name\"")
+                    resultStringBuilder.append("\n\n")
+                    resultStringBuilder.append(value)
+                    resultStringBuilder.append("\n")
+                }
+            } else {
+                resultStringBuilder.append("--")
+                resultStringBuilder.append(MULTIPART_FORM_BOUNDARY)
+                resultStringBuilder.append("\n")
+                resultStringBuilder.append("Content-Disposition: form-data; name=\"$name\"")
+                resultStringBuilder.append("\n\n")
+                resultStringBuilder.append(value)
+                resultStringBuilder.append("\n")
+            }
+
         }
         resultStringBuilder.append("--")
         resultStringBuilder.append(MULTIPART_FORM_BOUNDARY)
@@ -199,12 +215,23 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
             val formParameter = formParameterJsonArray.get(i) as JSONObject
             val name = formParameter.getString("name")
             val value = formParameter.getString("value")
+            val checked = formParameter.getString("checked")
+            val type = formParameter.getString("type")
             if (i != 0) {
                 resultStringBuilder.append("\n")
             }
-            resultStringBuilder.append(name)
-            resultStringBuilder.append("=")
-            resultStringBuilder.append(value)
+            if (type == "radio") {
+                if (checked == "checked") {
+                    resultStringBuilder.append(name)
+                    resultStringBuilder.append("=")
+                    resultStringBuilder.append(value)
+                }
+            } else {
+                resultStringBuilder.append(name)
+                resultStringBuilder.append("=")
+                resultStringBuilder.append(value)
+            }
+
         }
         return resultStringBuilder.toString()
     }
@@ -230,11 +257,15 @@ function recordFormSubmission(form) {
         var parName = form.elements[i].name;
         var parValue = form.elements[i].value;
         var parType = form.elements[i].type;
+        var parChecked = form.elements[i].checked;
+        var parId = form.elements[i].id;
 
         jsonArr.push({
             name: parName,
             value: parValue,
-            type: parType
+            type: parType,
+            checked:parChecked,
+            id:parId
         });
     }
 
