@@ -152,9 +152,7 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
             val value = formParameter.getString("value")
             val checked = formParameter.optBoolean("checked")
             val type = formParameter.getString("type")
-            if ((type == "radio" || type == "checkbox") && !checked) {
-
-            } else {
+            if (!abandon(type, checked)) {
                 map[name] = value
             }
         }
@@ -172,9 +170,7 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
             val type = formParameter.getString("type")
             val encodedValue = URLEncoder.encode(value, "UTF-8")
 
-            if ((type == "radio" || type == "checkbox") && !checked) {
-
-            } else {
+            if (!abandon(type, checked)) {
                 if (i != 0) {
                     resultStringBuilder.append("&")
                 }
@@ -197,8 +193,7 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
             val checked = formParameter.optBoolean("checked")
             val type = formParameter.getString("type")
 
-            if ((type == "radio" || type == "checkbox") && !checked) {
-            } else {
+            if (!abandon(type, checked)) {
                 resultStringBuilder.append("--")
                 resultStringBuilder.append(MULTIPART_FORM_BOUNDARY)
                 resultStringBuilder.append("\n")
@@ -224,8 +219,7 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
             val checked = formParameter.optBoolean("checked")
             val type = formParameter.getString("type")
 
-            if ((type == "radio" || type == "checkbox") && !checked) {
-            } else {
+            if (!abandon(type, checked)) {
                 if (i != 0) {
                     resultStringBuilder.append("\n")
                 }
@@ -236,6 +230,10 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
 
         }
         return resultStringBuilder.toString()
+    }
+
+    private fun abandon(type: String, checked: Boolean): Boolean {
+        return (type == "radio" || type == "checkbox") && !checked
     }
 
     companion object {
