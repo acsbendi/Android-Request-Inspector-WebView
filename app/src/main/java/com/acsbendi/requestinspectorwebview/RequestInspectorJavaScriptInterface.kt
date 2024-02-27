@@ -150,7 +150,11 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
             val formParameter = formParameterJsonArray.get(i) as JSONObject
             val name = formParameter.getString("name")
             val value = formParameter.getString("value")
-            map[name] = value
+            val checked = formParameter.optBoolean("checked")
+            val type = formParameter.getString("type")
+            if (!isExcludedFormParameter(type, checked)) {
+                map[name] = value
+            }
         }
         return map
     }
@@ -162,13 +166,20 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
             val formParameter = formParameterJsonArray.get(i) as JSONObject
             val name = formParameter.getString("name")
             val value = formParameter.getString("value")
+            val checked = formParameter.optBoolean("checked")
+            val type = formParameter.getString("type")
             val encodedValue = URLEncoder.encode(value, "UTF-8")
-            if (i != 0) {
-                resultStringBuilder.append("&")
+
+            if (!isExcludedFormParameter(type, checked)) {
+                if (i != 0) {
+                    resultStringBuilder.append("&")
+                }
+                resultStringBuilder.append(name)
+                resultStringBuilder.append("=")
+                resultStringBuilder.append(encodedValue)
             }
-            resultStringBuilder.append(name)
-            resultStringBuilder.append("=")
-            resultStringBuilder.append(encodedValue)
+
+
         }
         return resultStringBuilder.toString()
     }
@@ -179,13 +190,19 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
             val formParameter = formParameterJsonArray.get(i) as JSONObject
             val name = formParameter.getString("name")
             val value = formParameter.getString("value")
-            resultStringBuilder.append("--")
-            resultStringBuilder.append(MULTIPART_FORM_BOUNDARY)
-            resultStringBuilder.append("\n")
-            resultStringBuilder.append("Content-Disposition: form-data; name=\"$name\"")
-            resultStringBuilder.append("\n\n")
-            resultStringBuilder.append(value)
-            resultStringBuilder.append("\n")
+            val checked = formParameter.optBoolean("checked")
+            val type = formParameter.getString("type")
+
+            if (!isExcludedFormParameter(type, checked)) {
+                resultStringBuilder.append("--")
+                resultStringBuilder.append(MULTIPART_FORM_BOUNDARY)
+                resultStringBuilder.append("\n")
+                resultStringBuilder.append("Content-Disposition: form-data; name=\"$name\"")
+                resultStringBuilder.append("\n\n")
+                resultStringBuilder.append(value)
+                resultStringBuilder.append("\n")
+            }
+
         }
         resultStringBuilder.append("--")
         resultStringBuilder.append(MULTIPART_FORM_BOUNDARY)
@@ -199,14 +216,24 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
             val formParameter = formParameterJsonArray.get(i) as JSONObject
             val name = formParameter.getString("name")
             val value = formParameter.getString("value")
-            if (i != 0) {
-                resultStringBuilder.append("\n")
+            val checked = formParameter.optBoolean("checked")
+            val type = formParameter.getString("type")
+
+            if (!isExcludedFormParameter(type, checked)) {
+                if (i != 0) {
+                    resultStringBuilder.append("\n")
+                }
+                resultStringBuilder.append(name)
+                resultStringBuilder.append("=")
+                resultStringBuilder.append(value)
             }
-            resultStringBuilder.append(name)
-            resultStringBuilder.append("=")
-            resultStringBuilder.append(value)
+
         }
         return resultStringBuilder.toString()
+    }
+
+    private fun isExcludedFormParameter(type: String, checked: Boolean): Boolean {
+        return (type == "radio" || type == "checkbox") && !checked
     }
 
     companion object {
@@ -230,11 +257,15 @@ function recordFormSubmission(form) {
         var parName = form.elements[i].name;
         var parValue = form.elements[i].value;
         var parType = form.elements[i].type;
+        var parChecked = form.elements[i].checked;
+        var parId = form.elements[i].id;
 
         jsonArr.push({
             name: parName,
             value: parValue,
-            type: parType
+            type: parType,
+            checked:parChecked,
+            id:parId
         });
     }
 
