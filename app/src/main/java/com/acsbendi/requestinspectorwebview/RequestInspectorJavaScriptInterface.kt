@@ -293,7 +293,8 @@ function handleFormSubmission(e) {
 HTMLFormElement.prototype._submit = HTMLFormElement.prototype.submit;
 HTMLFormElement.prototype.submit = handleFormSubmission;
 window.addEventListener('submit', function (submitEvent) {
-    handleFormSubmission(submitEvent);
+    const form = submitEvent ? submitEvent.target : this;
+    recordFormSubmission(form);
 }, true);
 
 let lastXmlhttpRequestPrototypeMethod = null;
