@@ -149,9 +149,9 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
         repeat(formParameterJsonArray.length()) { i ->
             val formParameter = formParameterJsonArray.get(i) as JSONObject
             val name = formParameter.getString("name")
-            val value = formParameter.getString("value")
+            val value = formParameter.optString("value")
             val checked = formParameter.optBoolean("checked")
-            val type = formParameter.getString("type")
+            val type = formParameter.optString("type")
             if (!isExcludedFormParameter(type, checked)) {
                 map[name] = value
             }
@@ -165,9 +165,9 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
         repeat(formParameterJsonArray.length()) { i ->
             val formParameter = formParameterJsonArray.get(i) as JSONObject
             val name = formParameter.getString("name")
-            val value = formParameter.getString("value")
+            val value = formParameter.optString("value")
             val checked = formParameter.optBoolean("checked")
-            val type = formParameter.getString("type")
+            val type = formParameter.optString("type")
             val encodedValue = URLEncoder.encode(value, "UTF-8")
 
             if (!isExcludedFormParameter(type, checked)) {
@@ -189,9 +189,9 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
         repeat(formParameterJsonArray.length()) { i ->
             val formParameter = formParameterJsonArray.get(i) as JSONObject
             val name = formParameter.getString("name")
-            val value = formParameter.getString("value")
+            val value = formParameter.optString("value")
             val checked = formParameter.optBoolean("checked")
-            val type = formParameter.getString("type")
+            val type = formParameter.optString("type")
 
             if (!isExcludedFormParameter(type, checked)) {
                 resultStringBuilder.append("--")
@@ -215,9 +215,9 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
         repeat(formParameterJsonArray.length()) { i ->
             val formParameter = formParameterJsonArray.get(i) as JSONObject
             val name = formParameter.getString("name")
-            val value = formParameter.getString("value")
+            val value = formParameter.optString("value")
             val checked = formParameter.optBoolean("checked")
-            val type = formParameter.getString("type")
+            val type = formParameter.optString("type")
 
             if (!isExcludedFormParameter(type, checked)) {
                 if (i != 0) {
