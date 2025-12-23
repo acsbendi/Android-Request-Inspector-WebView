@@ -7,7 +7,6 @@ import org.intellij.lang.annotations.Language
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URLEncoder
-import java.util.Locale
 
 internal class RequestInspectorJavaScriptInterface(webView: WebView) {
 
@@ -138,7 +137,7 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
         val headersObject = JSONObject(headersString)
         val map = HashMap<String, String>()
         for (key in headersObject.keys()) {
-            val lowercaseHeader = key.lowercase(Locale.getDefault())
+            val lowercaseHeader = key.lowercase()
             map[lowercaseHeader] = headersObject.getString(key)
         }
         return map
