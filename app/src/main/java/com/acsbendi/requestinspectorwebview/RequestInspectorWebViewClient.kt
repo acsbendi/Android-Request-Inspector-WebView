@@ -7,14 +7,16 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import com.acsbendi.requestinspectorwebview.matcher.RequestMatcher
+import com.acsbendi.requestinspectorwebview.matcher.RequestUrlMatcher
 
 @SuppressLint("SetJavaScriptEnabled")
 open class RequestInspectorWebViewClient @JvmOverloads constructor(
-    webView: WebView,
+    webView: WebView, val matcher: RequestMatcher = RequestUrlMatcher(),
     private val options: RequestInspectorOptions = RequestInspectorOptions()
 ) : WebViewClient() {
 
-    private val interceptionJavascriptInterface = RequestInspectorJavaScriptInterface(webView)
+    private val interceptionJavascriptInterface = RequestInspectorJavaScriptInterface(webView, matcher)
 
     init {
         val webSettings = webView.settings
@@ -26,10 +28,7 @@ open class RequestInspectorWebViewClient @JvmOverloads constructor(
         view: WebView,
         request: WebResourceRequest
     ): WebResourceResponse? {
-        val recordedRequest = interceptionJavascriptInterface.findRecordedRequestForUrl(
-            request.url.toString()
-        )
-        val webViewRequest = WebViewRequest.create(request, recordedRequest)
+        val webViewRequest = interceptionJavascriptInterface.createWebViewRequest(request)
         return shouldInterceptRequest(view, webViewRequest)
     }
 

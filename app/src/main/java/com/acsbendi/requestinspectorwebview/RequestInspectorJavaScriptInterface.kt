@@ -2,33 +2,23 @@ package com.acsbendi.requestinspectorwebview
 
 import android.util.Log
 import android.webkit.JavascriptInterface
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
+import com.acsbendi.requestinspectorwebview.matcher.RequestMatcher
 import org.intellij.lang.annotations.Language
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.net.URLEncoder
 
-internal class RequestInspectorJavaScriptInterface(webView: WebView) {
+class RequestInspectorJavaScriptInterface(webView: WebView, val matcher: RequestMatcher) {
 
     init {
         webView.addJavascriptInterface(this, INTERFACE_NAME)
     }
 
-    private val recordedRequests = ArrayList<RecordedRequest>()
-
-    fun findRecordedRequestForUrl(url: String): RecordedRequest? {
-        return synchronized(recordedRequests) {
-            // use findLast instead of find to find the last added query matching a URL -
-            // they are included at the end of the list when written.
-            recordedRequests.findLast { recordedRequest ->
-                // Added search by exact URL to find the actual request body
-                url == recordedRequest.url
-            } ?: recordedRequests.findLast { recordedRequest ->
-                // Previously, there was only a search by contains, and because of this, sometimes the wrong request body was found
-                url.contains(recordedRequest.url)
-            }
-        }
+    fun createWebViewRequest(request: WebResourceRequest): WebViewRequest {
+        return matcher.createWebViewRequest(request)
     }
 
     data class RecordedRequest(
@@ -129,9 +119,7 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
     }
 
     private fun addRecordedRequest(recordedRequest: RecordedRequest) {
-        synchronized(recordedRequests) {
-            recordedRequests.add(recordedRequest)
-        }
+        matcher.addRecordedRequest(recordedRequest)
     }
 
     private fun getHeadersAsMap(headersString: String): MutableMap<String, String> {
@@ -164,7 +152,6 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
         }
         return map
     }
-
 
     private fun getUrlEncodedFormBody(formParameterJsonArray: JSONArray): String {
         val resultStringBuilder = StringBuilder()
