@@ -1,9 +1,11 @@
 package com.acsbendi.requestinspectorwebview
 
+import android.net.Uri
 import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
+import androidx.core.net.toUri
 import com.acsbendi.requestinspectorwebview.matcher.RequestMatcher
 import org.intellij.lang.annotations.Language
 import org.json.JSONArray
@@ -23,7 +25,7 @@ class RequestInspectorJavaScriptInterface(webView: WebView, val matcher: Request
 
     data class RecordedRequest(
         val type: WebViewRequestType,
-        val url: String,
+        val url: Uri,
         val method: String,
         val body: String,
         val formParameters: Map<String, String>,
@@ -71,7 +73,7 @@ class RequestInspectorJavaScriptInterface(webView: WebView, val matcher: Request
         addRecordedRequest(
             RecordedRequest(
                 WebViewRequestType.FORM,
-                url,
+                url.toUri(),
                 method,
                 body,
                 formParameterMap,
@@ -89,7 +91,7 @@ class RequestInspectorJavaScriptInterface(webView: WebView, val matcher: Request
         addRecordedRequest(
             RecordedRequest(
                 WebViewRequestType.XML_HTTP,
-                url,
+                url.toUri(),
                 method,
                 body,
                 mapOf(),
@@ -107,7 +109,7 @@ class RequestInspectorJavaScriptInterface(webView: WebView, val matcher: Request
         addRecordedRequest(
             RecordedRequest(
                 WebViewRequestType.FETCH,
-                url,
+                url.toUri(),
                 method,
                 body,
                 mapOf(),
@@ -116,6 +118,11 @@ class RequestInspectorJavaScriptInterface(webView: WebView, val matcher: Request
                 null
             )
         )
+    }
+
+    @JavascriptInterface
+    fun getAdditionalHeaders(url: String): String {
+        return matcher.additionalHeaders(url).toString()
     }
 
     private fun addRecordedRequest(recordedRequest: RecordedRequest) {
@@ -309,6 +316,15 @@ XMLHttpRequest.prototype._send = XMLHttpRequest.prototype.send;
 XMLHttpRequest.prototype.send = function (body) {
     const err = new Error();
     const url = getFullUrl(xmlhttpRequestUrl);
+    // Inject headers from Kotlin if any
+    try {
+        var extraHeaders = JSON.parse($INTERFACE_NAME.getAdditionalHeaders(url));
+        for (var h in extraHeaders) {
+            if (extraHeaders.hasOwnProperty(h)) {
+                this.setRequestHeader(h, extraHeaders[h]);
+            }
+        }
+    } catch (e) { console.warn('Failed to inject headers from Kotlin (XHR):', e); }
     $INTERFACE_NAME.recordXhr(
         url,
         lastXmlhttpRequestPrototypeMethod,
@@ -325,22 +341,33 @@ XMLHttpRequest.prototype.send = function (body) {
 window._fetch = window.fetch;
 window.fetch = function () {
     const firstArgument = arguments[0];
-    let url;
-    let method;
-    let body;
-    let headers;
+    let url, method, body, headers;
     if (typeof firstArgument === 'string') {
         url = firstArgument;
+        if (!arguments[1]) arguments[1] = {};
         method = arguments[1] && 'method' in arguments[1] ? arguments[1]['method'] : "GET";
         body = arguments[1] && 'body' in arguments[1] ? arguments[1]['body'] : "";
-        headers = JSON.stringify(arguments[1] && 'headers' in arguments[1] ? arguments[1]['headers'] : {});
+        headers = arguments[1] && 'headers' in arguments[1] ? arguments[1]['headers'] : {};
+        // Inject headers from Kotlin if any
+        try {
+            var extraHeaders = JSON.parse($INTERFACE_NAME.getAdditionalHeaders(url));
+            arguments[1].headers = Object.assign({}, extraHeaders, headers || {});
+        } catch (e) { console.warn('Failed to inject headers from Kotlin (fetch):', e); }
     } else {
         // Request object
         url = firstArgument.url;
         method = firstArgument.method;
         body = firstArgument.body;
-        headers = JSON.stringify(Object.fromEntries(firstArgument.headers.entries()));
+        headers = Object.fromEntries(firstArgument.headers.entries());
+        // Inject headers from Kotlin if any
+        try {
+            var extraHeaders = JSON.parse($INTERFACE_NAME.getAdditionalHeaders(url));
+            for (var h in extraHeaders) {
+                firstArgument.headers.set ? firstArgument.headers.set(h, extraHeaders[h]) : firstArgument.headers[h] = extraHeaders[h];
+            }
+        } catch (e) { console.warn('Failed to inject headers from Kotlin (fetch):', e); }
     }
+    
     const fullUrl = getFullUrl(url);
     const err = new Error();
     $INTERFACE_NAME.recordFetch(fullUrl, method, body, headers, err.stack);

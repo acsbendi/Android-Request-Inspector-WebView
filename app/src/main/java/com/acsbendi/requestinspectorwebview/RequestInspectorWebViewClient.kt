@@ -7,6 +7,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.core.net.toUri
 import com.acsbendi.requestinspectorwebview.matcher.RequestMatcher
 import com.acsbendi.requestinspectorwebview.matcher.RequestUrlMatcher
 
@@ -47,6 +48,7 @@ open class RequestInspectorWebViewClient @JvmOverloads constructor(
 
     override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
         Log.i(LOG_TAG, "Page started loading, enabling request inspection. URL: $url")
+        matcher.setOrigin(url)
         RequestInspectorJavaScriptInterface.enabledRequestInspection(
             view,
             options.extraJavaScriptToInject

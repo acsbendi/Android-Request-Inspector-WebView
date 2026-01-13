@@ -25,10 +25,10 @@ class RequestUrlMatcher : RequestMatcher {
             // they are included at the end of the list when written.
             recordedRequests.findLast { recordedRequest ->
                 // Added search by exact URL to find the actual request body
-                url == recordedRequest.url
+                url == recordedRequest.url.toString()
             } ?: recordedRequests.findLast { recordedRequest ->
                 // Previously, there was only a search by contains, and because of this, sometimes the wrong request body was found
-                url.contains(recordedRequest.url)
+                url.contains(recordedRequest.url.toString())
             }
         }
     }
