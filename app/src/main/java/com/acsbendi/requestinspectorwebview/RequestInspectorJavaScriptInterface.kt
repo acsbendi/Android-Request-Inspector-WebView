@@ -122,7 +122,12 @@ class RequestInspectorJavaScriptInterface(webView: WebView, val matcher: Request
 
     @JavascriptInterface
     fun getAdditionalHeaders(url: String): String {
-        return matcher.additionalHeaders(url).toString()
+        return matcher.getAdditionalHeaders(url).toString()
+    }
+
+    @JavascriptInterface
+    fun getAdditionalQueryParam(): String {
+        return matcher.getAdditionalQueryParams()
     }
 
     private fun addRecordedRequest(recordedRequest: RecordedRequest) {
@@ -251,6 +256,31 @@ function getFullUrl(url) {
     }
 }
 
+function setAdditionalHeaders(url, callback) {
+    try {
+        var extraHeaders = JSON.parse($INTERFACE_NAME.getAdditionalHeaders(url));
+        callback(extraHeaders);
+    } catch (e) {
+        console.warn('Failed to inject headers from Kotlin:', e);
+    }
+}
+
+function appendAdditionalQueryParams(url) {
+    try {
+        var extraQueryParam = $INTERFACE_NAME.getAdditionalQueryParam();
+        if (extraQueryParam) {
+            if (url.indexOf('?') === -1) {
+                url += '?' + extraQueryParam;
+            } else {
+                url += '&' + extraQueryParam;
+            }
+        }
+    } catch (e) { 
+        console.warn('Failed to inject query param from Kotlin:', e); 
+    }
+    return url;
+}
+
 function recordFormSubmission(form) {
     var jsonArr = [];
     for (i = 0; i < form.elements.length; i++) {
@@ -271,7 +301,7 @@ function recordFormSubmission(form) {
 
     const path = form.attributes['action'] === undefined ? "/" : form.attributes['action'].nodeValue;
     const method = form.attributes['method'] === undefined ? "GET" : form.attributes['method'].nodeValue;
-    const url = getFullUrl(path);
+    const url = appendAdditionalQueryParams(getFullUrl(path));
     const encType = form.attributes['enctype'] === undefined ? "application/x-www-form-urlencoded" : form.attributes['enctype'].nodeValue;
     const err = new Error();
     $INTERFACE_NAME.recordFormSubmission(
@@ -303,9 +333,9 @@ let xmlhttpRequestUrl = null;
 XMLHttpRequest.prototype._open = XMLHttpRequest.prototype.open;
 XMLHttpRequest.prototype.open = function (method, url, async, user, password) {
     lastXmlhttpRequestPrototypeMethod = method;
-    xmlhttpRequestUrl = url;
+    xmlhttpRequestUrl = appendAdditionalQueryParams(url);
     const asyncWithDefault = async === undefined ? true : async;
-    this._open(method, url, asyncWithDefault, user, password);
+    this._open(method, xmlhttpRequestUrl, asyncWithDefault, user, password);
 };
 XMLHttpRequest.prototype._setRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
 XMLHttpRequest.prototype.setRequestHeader = function (header, value) {
@@ -315,18 +345,14 @@ XMLHttpRequest.prototype.setRequestHeader = function (header, value) {
 XMLHttpRequest.prototype._send = XMLHttpRequest.prototype.send;
 XMLHttpRequest.prototype.send = function (body) {
     const err = new Error();
-    const url = getFullUrl(xmlhttpRequestUrl);
-    // Inject headers from Kotlin if any
-    try {
-        var extraHeaders = JSON.parse($INTERFACE_NAME.getAdditionalHeaders(url));
+    let url = getFullUrl(xmlhttpRequestUrl);
+    setAdditionalHeaders(url, function(extraHeaders) {
         for (var h in extraHeaders) {
             if (extraHeaders.hasOwnProperty(h)) {
                 this.setRequestHeader(h, extraHeaders[h]);
             }
         }
-    } catch (e) { 
-        console.warn('Failed to inject headers from Kotlin (XHR):', e); 
-    }
+    }.bind(this));
     $INTERFACE_NAME.recordXhr(
         url,
         lastXmlhttpRequestPrototypeMethod,
@@ -345,33 +371,27 @@ window.fetch = function () {
     const firstArgument = arguments[0];
     let url, method, body, headers;
     if (typeof firstArgument === 'string') {
-        url = firstArgument;
+        url = appendAdditionalQueryParams(firstArgument);
         if (!arguments[1]) arguments[1] = {};
-        method = arguments[1] && 'method' in arguments[1] ? arguments[1]['method'] : "GET";
-        body = arguments[1] && 'body' in arguments[1] ? arguments[1]['body'] : "";
-        headers = arguments[1] && 'headers' in arguments[1] ? arguments[1]['headers'] : {};
-        // Inject headers from Kotlin if any
-        try {
-            var extraHeaders = JSON.parse($INTERFACE_NAME.getAdditionalHeaders(url));
-            arguments[1].headers = Object.assign({}, extraHeaders, headers || {});
-        } catch (e) { 
-            console.warn('Failed to inject headers from Kotlin (fetch):', e); 
-        }
+        method = 'method' in arguments[1] ? arguments[1]['method'] : "GET";
+        body = 'body' in arguments[1] ? arguments[1]['body'] : "";
+        headers = 'headers' in arguments[1] ? arguments[1]['headers'] : {};
+        setAdditionalHeaders(url, function(extraHeaders) {
+            arguments[1].headers = { ...extraHeaders, ...headers };
+        });
+        arguments[0] = url;
     } else {
         // Request object
-        url = firstArgument.url;
+        url = appendAdditionalQueryParams(firstArgument.url);
         method = firstArgument.method;
         body = firstArgument.body;
         headers = Object.fromEntries(firstArgument.headers.entries());
-        // Inject headers from Kotlin if any
-        try {
-            var extraHeaders = JSON.parse($INTERFACE_NAME.getAdditionalHeaders(url));
+        setAdditionalHeaders(url, function(extraHeaders) {
             for (var h in extraHeaders) {
                 firstArgument.headers.set ? firstArgument.headers.set(h, extraHeaders[h]) : firstArgument.headers[h] = extraHeaders[h];
             }
-        } catch (e) { 
-            console.warn('Failed to inject headers from Kotlin (fetch):', e); 
-        }
+        });
+        firstArgument.url = url;
     }
     
     const fullUrl = getFullUrl(url);

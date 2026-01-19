@@ -8,7 +8,8 @@ import org.json.JSONObject
 interface RequestMatcher {
     fun addRecordedRequest(recordedRequest: RecordedRequest)
     fun createWebViewRequest(request: WebResourceRequest): WebViewRequest
-    fun additionalHeaders(url: String): JSONObject = JSONObject()
-    fun setOrigin(url: String) {}
+    fun getAdditionalHeaders(url: String): JSONObject = JSONObject()
+    fun getAdditionalQueryParams(): String = ""
+    fun onPageStarted(url: String) {}
 }
 
