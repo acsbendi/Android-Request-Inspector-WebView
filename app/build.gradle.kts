@@ -15,7 +15,12 @@ android {
 
     defaultConfig {
         minSdk = 21
-        targetSdk = 31
+        testOptions {
+            targetSdk = 31
+        }
+        lint {
+            targetSdk = 31
+        }
 
         version = currentVersion
     }
@@ -28,8 +33,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     publishing {
