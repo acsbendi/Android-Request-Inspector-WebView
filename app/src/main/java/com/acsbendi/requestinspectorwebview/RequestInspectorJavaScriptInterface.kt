@@ -5,6 +5,7 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import org.intellij.lang.annotations.Language
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
 import java.net.URLEncoder
 
@@ -134,7 +135,13 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
     }
 
     private fun getHeadersAsMap(headersString: String): MutableMap<String, String> {
-        val headersObject = JSONObject(headersString)
+        val headersObject = try {
+            JSONObject(headersString)
+        } catch (_: JSONException) {
+            // When during the creation of a JSONObject from the string a JSONException is thrown, we simply return an
+            // empty JSONObject. This happens e.g. when JS send "undefined" or an empty string as headers.
+            JSONObject()
+        }
         val map = HashMap<String, String>()
         for (key in headersObject.keys()) {
             val lowercaseHeader = key.lowercase()
