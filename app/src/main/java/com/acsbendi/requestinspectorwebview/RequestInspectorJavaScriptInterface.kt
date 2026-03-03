@@ -324,7 +324,9 @@ XMLHttpRequest.prototype.send = function (body) {
                 this.setRequestHeader(h, extraHeaders[h]);
             }
         }
-    } catch (e) { console.warn('Failed to inject headers from Kotlin (XHR):', e); }
+    } catch (e) { 
+        console.warn('Failed to inject headers from Kotlin (XHR):', e); 
+    }
     $INTERFACE_NAME.recordXhr(
         url,
         lastXmlhttpRequestPrototypeMethod,
@@ -352,7 +354,9 @@ window.fetch = function () {
         try {
             var extraHeaders = JSON.parse($INTERFACE_NAME.getAdditionalHeaders(url));
             arguments[1].headers = Object.assign({}, extraHeaders, headers || {});
-        } catch (e) { console.warn('Failed to inject headers from Kotlin (fetch):', e); }
+        } catch (e) { 
+            console.warn('Failed to inject headers from Kotlin (fetch):', e); 
+        }
     } else {
         // Request object
         url = firstArgument.url;
@@ -365,7 +369,9 @@ window.fetch = function () {
             for (var h in extraHeaders) {
                 firstArgument.headers.set ? firstArgument.headers.set(h, extraHeaders[h]) : firstArgument.headers[h] = extraHeaders[h];
             }
-        } catch (e) { console.warn('Failed to inject headers from Kotlin (fetch):', e); }
+        } catch (e) { 
+            console.warn('Failed to inject headers from Kotlin (fetch):', e); 
+        }
     }
     
     const fullUrl = getFullUrl(url);
