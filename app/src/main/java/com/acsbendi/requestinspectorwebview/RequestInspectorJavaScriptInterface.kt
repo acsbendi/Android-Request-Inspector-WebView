@@ -377,7 +377,8 @@ window.fetch = function () {
         body = 'body' in arguments[1] ? arguments[1]['body'] : "";
         headers = 'headers' in arguments[1] ? arguments[1]['headers'] : {};
         setAdditionalHeaders(url, function(extraHeaders) {
-            arguments[1].headers = { ...extraHeaders, ...headers };
+            headers = { ...extraHeaders, ...headers };
+            arguments[1].headers = headers;
         });
         arguments[0] = url;
     } else {
@@ -385,18 +386,26 @@ window.fetch = function () {
         url = appendAdditionalQueryParams(firstArgument.url);
         method = firstArgument.method;
         body = firstArgument.body;
-        headers = Object.fromEntries(firstArgument.headers.entries());
         setAdditionalHeaders(url, function(extraHeaders) {
             for (var h in extraHeaders) {
                 firstArgument.headers.set ? firstArgument.headers.set(h, extraHeaders[h]) : firstArgument.headers[h] = extraHeaders[h];
             }
         });
-        firstArgument.url = url;
+        headers = Object.fromEntries(firstArgument.headers.entries());
     }
     
     const fullUrl = getFullUrl(url);
     const err = new Error();
-    $INTERFACE_NAME.recordFetch(fullUrl, method, body, headers, err.stack);
+    $INTERFACE_NAME.recordFetch(fullUrl, method, body || '', JSON.stringify(headers), err.stack);
+    // Rebuild the Request with the (possibly modified) URL after recording so that
+    // a failure here never prevents the request from being recorded.
+    if (typeof firstArgument !== 'string') {
+        try { 
+            arguments[0] = new Request(url, firstArgument); 
+        } catch(e) {
+            console.warn('Failed to rebuild Request object with modified URL, proceeding with original Request. Error:', e);
+        }
+    }
     return window._fetch.apply(this, arguments);
 }
         """
