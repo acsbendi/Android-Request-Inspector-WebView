@@ -16,7 +16,7 @@ import java.util.UUID
  * the CORS request will fail because the browser engine only knows about the adapted header and doesn't execute the
  * CORS request, because the preflight check doesn't return the custom header as allowed.
  */
-class RequestGeneratedUuidInHeaderMatcher() : RequestGeneratedUuidMatcher() {
+class GeneratedUuidInHeaderRequestMatcher() : GeneratedUuidRequestMatcher() {
 
     private var origin: String = ""
 

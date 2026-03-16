@@ -4,7 +4,7 @@ import android.webkit.WebResourceRequest
 import com.acsbendi.requestinspectorwebview.RequestInspectorJavaScriptInterface
 import java.util.UUID
 
-class RequestGeneratedUuidInQueryParamMatcher : RequestGeneratedUuidMatcher() {
+class GeneratedUuidInQueryParamRequestMatcher : GeneratedUuidRequestMatcher() {
 
     override fun getUuidFromRequest(recordedRequest: RequestInspectorJavaScriptInterface.RecordedRequest): String? =
         recordedRequest.url.getQueryParameter(REQUEST_INSPECTOR_ID)

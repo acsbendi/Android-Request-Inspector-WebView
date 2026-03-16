@@ -4,7 +4,7 @@ import android.webkit.WebResourceRequest
 import com.acsbendi.requestinspectorwebview.RequestInspectorJavaScriptInterface.RecordedRequest
 import com.acsbendi.requestinspectorwebview.WebViewRequest
 
-abstract class RequestGeneratedUuidMatcher : RequestMatcher {
+abstract class GeneratedUuidRequestMatcher : RequestMatcher {
 
     private val recordedRequests = mutableMapOf<String, RecordedRequest>()
 
