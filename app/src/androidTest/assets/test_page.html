@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <script src="test_requests.js"></script>
+</head>
+<body>
+    <form id="formGet" action="https://example.com/form-get" method="GET">
+        <input type="text" name="query" value="hello">
+        <input type="hidden" name="source" value="test">
+    </form>
+
+    <form id="formPostUrlEncoded" action="https://example.com/form-post-urlencoded" method="POST"
+          enctype="application/x-www-form-urlencoded">
+        <input type="text" name="username" value="testuser">
+        <input type="password" name="password" value="secret123">
+    </form>
+
+    <form id="formPostMultipart" action="https://example.com/form-post-multipart" method="POST"
+          enctype="multipart/form-data">
+        <input type="text" name="field1" value="value1">
+        <input type="text" name="field2" value="value2">
+    </form>
+
+    <form id="formPostPlainText" action="https://example.com/form-post-plaintext" method="POST"
+          enctype="text/plain">
+        <input type="text" name="message" value="hello world">
+    </form>
+</body>
+</html>
