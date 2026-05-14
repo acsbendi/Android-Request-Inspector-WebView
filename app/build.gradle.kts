@@ -1,3 +1,5 @@
+import org.gradle.api.publish.PublishingExtension
+
 plugins {
     id("com.android.library")
     kotlin("android")
@@ -5,7 +7,7 @@ plugins {
 
 apply(plugin = "maven-publish")
 
-val currentVersion = "1.1.1"
+val currentVersion = "1.1.2"
 
 group = "com.acsbendi"
 version = currentVersion
@@ -49,7 +51,7 @@ kotlin {
     jvmToolchain(21)
 }
 
-publishing {
+configure<PublishingExtension> {
     publications {
         register<MavenPublication>("release") {
             groupId = group as String
