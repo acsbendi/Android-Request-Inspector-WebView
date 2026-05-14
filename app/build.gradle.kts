@@ -1,10 +1,11 @@
 plugins {
     id("com.android.library")
     kotlin("android")
-    `maven-publish`
 }
 
-val currentVersion = "1.1.0"
+apply(plugin = "maven-publish")
+
+val currentVersion = "1.1.1"
 
 group = "com.acsbendi"
 version = currentVersion
