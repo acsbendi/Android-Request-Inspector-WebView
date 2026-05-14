@@ -52,6 +52,29 @@ To manually process requests:
     }
 ```
 
+For both cases you can choose between different strategies for how the recorded requests (including 
+the body) and the intercepted requests are matched together. By default, only the url is used. If 
+you want to use a different strategy, for example if you have parallel requests to the same url with
+different bodies (e.g. GraphQL queries), you can pass a custom `RequestMatcher` to the constructor 
+of `RequestInspectorWebViewClient`:
+
+```kotlin
+    val webView = WebView(this)
+    webView.webViewClient = RequestInspectorWebViewClient(
+        webView,
+        matcher = RequestGeneratedUuidInHeaderMatcher()
+    )
+```
+
+Currently available matchers are `GeneratedUuidInHeaderRequestMatcher` and 
+`GeneratedUuidInUrlRequestMatcher`, which both create an UUID and add it to the request before it's 
+recorded and sent from JavaScript. They only differ by how they attach the UUID to the request, as 
+an additional header or as an additional query param. But both clean up the request when it's 
+intecepted on native side, so before it's really sent out to the target. 
+
+If you want to implement your own matching strategy, you can implement the `RequestMatcher` 
+interface and pass an instance of it to the constructor of `RequestInspectorWebViewClient`.
+
 Known limitations
 ===
 

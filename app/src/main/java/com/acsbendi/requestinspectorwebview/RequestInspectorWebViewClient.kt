@@ -7,14 +7,17 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import com.acsbendi.requestinspectorwebview.matcher.RequestMatcher
+import com.acsbendi.requestinspectorwebview.matcher.RequestUrlMatcher
 
 @SuppressLint("SetJavaScriptEnabled")
 open class RequestInspectorWebViewClient @JvmOverloads constructor(
     webView: WebView,
+    val matcher: RequestMatcher = RequestUrlMatcher(),
     private val options: RequestInspectorOptions = RequestInspectorOptions()
 ) : WebViewClient() {
 
-    private val interceptionJavascriptInterface = RequestInspectorJavaScriptInterface(webView)
+    private val interceptionJavascriptInterface = RequestInspectorJavaScriptInterface(webView, matcher)
 
     init {
         val webSettings = webView.settings
@@ -26,10 +29,7 @@ open class RequestInspectorWebViewClient @JvmOverloads constructor(
         view: WebView,
         request: WebResourceRequest
     ): WebResourceResponse? {
-        val recordedRequest = interceptionJavascriptInterface.findRecordedRequestForUrl(
-            request.url.toString()
-        )
-        val webViewRequest = WebViewRequest.create(request, recordedRequest)
+        val webViewRequest = interceptionJavascriptInterface.createWebViewRequest(request)
         return shouldInterceptRequest(view, webViewRequest)
     }
 
@@ -48,6 +48,7 @@ open class RequestInspectorWebViewClient @JvmOverloads constructor(
 
     override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
         Log.i(LOG_TAG, "Page started loading, enabling request inspection. URL: $url")
+        matcher.onPageStarted(url)
         RequestInspectorJavaScriptInterface.enabledRequestInspection(
             view,
             options.extraJavaScriptToInject

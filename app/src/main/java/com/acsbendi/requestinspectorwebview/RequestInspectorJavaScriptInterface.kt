@@ -1,38 +1,31 @@
 package com.acsbendi.requestinspectorwebview
 
+import android.net.Uri
 import android.util.Log
 import android.webkit.JavascriptInterface
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
+import androidx.core.net.toUri
+import com.acsbendi.requestinspectorwebview.matcher.RequestMatcher
 import org.intellij.lang.annotations.Language
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
 import java.net.URLEncoder
 
-internal class RequestInspectorJavaScriptInterface(webView: WebView) {
+class RequestInspectorJavaScriptInterface(webView: WebView, val matcher: RequestMatcher) {
 
     init {
         webView.addJavascriptInterface(this, INTERFACE_NAME)
     }
 
-    private val recordedRequests = ArrayList<RecordedRequest>()
-
-    fun findRecordedRequestForUrl(url: String): RecordedRequest? {
-        return synchronized(recordedRequests) {
-            // use findLast instead of find to find the last added query matching a URL -
-            // they are included at the end of the list when written.
-            recordedRequests.findLast { recordedRequest ->
-                // Added search by exact URL to find the actual request body
-                url == recordedRequest.url
-            } ?: recordedRequests.findLast { recordedRequest ->
-                // Previously, there was only a search by contains, and because of this, sometimes the wrong request body was found
-                url.contains(recordedRequest.url)
-            }
-        }
+    fun createWebViewRequest(request: WebResourceRequest): WebViewRequest {
+        return matcher.createWebViewRequest(request)
     }
 
     data class RecordedRequest(
         val type: WebViewRequestType,
-        val url: String,
+        val url: Uri,
         val method: String,
         val body: String,
         val formParameters: Map<String, String>,
@@ -80,7 +73,7 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
         addRecordedRequest(
             RecordedRequest(
                 WebViewRequestType.FORM,
-                url,
+                url.toUri(),
                 method,
                 body,
                 formParameterMap,
@@ -98,7 +91,7 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
         addRecordedRequest(
             RecordedRequest(
                 WebViewRequestType.XML_HTTP,
-                url,
+                url.toUri(),
                 method,
                 body,
                 mapOf(),
@@ -116,7 +109,7 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
         addRecordedRequest(
             RecordedRequest(
                 WebViewRequestType.FETCH,
-                url,
+                url.toUri(),
                 method,
                 body,
                 mapOf(),
@@ -127,14 +120,28 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
         )
     }
 
+    @JavascriptInterface
+    fun getAdditionalHeaders(url: String): String {
+        return matcher.getAdditionalHeaders(url).toString()
+    }
+
+    @JavascriptInterface
+    fun getAdditionalQueryParam(): String {
+        return matcher.getAdditionalQueryParams()
+    }
+
     private fun addRecordedRequest(recordedRequest: RecordedRequest) {
-        synchronized(recordedRequests) {
-            recordedRequests.add(recordedRequest)
-        }
+        matcher.addRecordedRequest(recordedRequest)
     }
 
     private fun getHeadersAsMap(headersString: String): MutableMap<String, String> {
-        val headersObject = JSONObject(headersString)
+        val headersObject = try {
+            JSONObject(headersString)
+        } catch (_: JSONException) {
+            // When during the creation of a JSONObject from the string a JSONException is thrown, we simply return an
+            // empty JSONObject. This happens e.g. when JS send "undefined" or an empty string as headers.
+            JSONObject()
+        }
         val map = HashMap<String, String>()
         for (key in headersObject.keys()) {
             val lowercaseHeader = key.lowercase()
@@ -157,7 +164,6 @@ internal class RequestInspectorJavaScriptInterface(webView: WebView) {
         }
         return map
     }
-
 
     private fun getUrlEncodedFormBody(formParameterJsonArray: JSONArray): String {
         val resultStringBuilder = StringBuilder()
@@ -250,6 +256,31 @@ function getFullUrl(url) {
     }
 }
 
+function setAdditionalHeaders(url, callback) {
+    try {
+        var extraHeaders = JSON.parse($INTERFACE_NAME.getAdditionalHeaders(url));
+        callback(extraHeaders);
+    } catch (e) {
+        console.warn('Failed to inject headers from Kotlin:', e);
+    }
+}
+
+function appendAdditionalQueryParams(url) {
+    try {
+        var extraQueryParam = $INTERFACE_NAME.getAdditionalQueryParam();
+        if (extraQueryParam) {
+            if (url.indexOf('?') === -1) {
+                url += '?' + extraQueryParam;
+            } else {
+                url += '&' + extraQueryParam;
+            }
+        }
+    } catch (e) { 
+        console.warn('Failed to inject query param from Kotlin:', e); 
+    }
+    return url;
+}
+
 function recordFormSubmission(form) {
     var jsonArr = [];
     for (i = 0; i < form.elements.length; i++) {
@@ -270,7 +301,7 @@ function recordFormSubmission(form) {
 
     const path = form.attributes['action'] === undefined ? "/" : form.attributes['action'].nodeValue;
     const method = form.attributes['method'] === undefined ? "GET" : form.attributes['method'].nodeValue;
-    const url = getFullUrl(path);
+    const url = appendAdditionalQueryParams(getFullUrl(path));
     const encType = form.attributes['enctype'] === undefined ? "application/x-www-form-urlencoded" : form.attributes['enctype'].nodeValue;
     const err = new Error();
     $INTERFACE_NAME.recordFormSubmission(
@@ -302,9 +333,9 @@ let xmlhttpRequestUrl = null;
 XMLHttpRequest.prototype._open = XMLHttpRequest.prototype.open;
 XMLHttpRequest.prototype.open = function (method, url, async, user, password) {
     lastXmlhttpRequestPrototypeMethod = method;
-    xmlhttpRequestUrl = url;
+    xmlhttpRequestUrl = appendAdditionalQueryParams(url);
     const asyncWithDefault = async === undefined ? true : async;
-    this._open(method, url, asyncWithDefault, user, password);
+    this._open(method, xmlhttpRequestUrl, asyncWithDefault, user, password);
 };
 XMLHttpRequest.prototype._setRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
 XMLHttpRequest.prototype.setRequestHeader = function (header, value) {
@@ -314,7 +345,14 @@ XMLHttpRequest.prototype.setRequestHeader = function (header, value) {
 XMLHttpRequest.prototype._send = XMLHttpRequest.prototype.send;
 XMLHttpRequest.prototype.send = function (body) {
     const err = new Error();
-    const url = getFullUrl(xmlhttpRequestUrl);
+    let url = getFullUrl(xmlhttpRequestUrl);
+    setAdditionalHeaders(url, function(extraHeaders) {
+        for (var h in extraHeaders) {
+            if (extraHeaders.hasOwnProperty(h)) {
+                this.setRequestHeader(h, extraHeaders[h]);
+            }
+        }
+    }.bind(this));
     $INTERFACE_NAME.recordXhr(
         url,
         lastXmlhttpRequestPrototypeMethod,
@@ -331,25 +369,43 @@ XMLHttpRequest.prototype.send = function (body) {
 window._fetch = window.fetch;
 window.fetch = function () {
     const firstArgument = arguments[0];
-    let url;
-    let method;
-    let body;
-    let headers;
+    let url, method, body, headers;
     if (typeof firstArgument === 'string') {
-        url = firstArgument;
-        method = arguments[1] && 'method' in arguments[1] ? arguments[1]['method'] : "GET";
-        body = arguments[1] && 'body' in arguments[1] ? arguments[1]['body'] : "";
-        headers = JSON.stringify(arguments[1] && 'headers' in arguments[1] ? arguments[1]['headers'] : {});
+        url = appendAdditionalQueryParams(firstArgument);
+        if (!arguments[1]) arguments[1] = {};
+        method = 'method' in arguments[1] ? arguments[1]['method'] : "GET";
+        body = 'body' in arguments[1] ? arguments[1]['body'] : "";
+        headers = 'headers' in arguments[1] ? arguments[1]['headers'] : {};
+        setAdditionalHeaders(url, function(extraHeaders) {
+            headers = { ...extraHeaders, ...headers };
+            arguments[1].headers = headers;
+        });
+        arguments[0] = url;
     } else {
         // Request object
-        url = firstArgument.url;
+        url = appendAdditionalQueryParams(firstArgument.url);
         method = firstArgument.method;
         body = firstArgument.body;
-        headers = JSON.stringify(Object.fromEntries(firstArgument.headers.entries()));
+        setAdditionalHeaders(url, function(extraHeaders) {
+            for (var h in extraHeaders) {
+                firstArgument.headers.set ? firstArgument.headers.set(h, extraHeaders[h]) : firstArgument.headers[h] = extraHeaders[h];
+            }
+        });
+        headers = Object.fromEntries(firstArgument.headers.entries());
     }
+    
     const fullUrl = getFullUrl(url);
     const err = new Error();
-    $INTERFACE_NAME.recordFetch(fullUrl, method, body, headers, err.stack);
+    $INTERFACE_NAME.recordFetch(fullUrl, method, body || '', JSON.stringify(headers), err.stack);
+    // Rebuild the Request with the (possibly modified) URL after recording so that
+    // a failure here never prevents the request from being recorded.
+    if (typeof firstArgument !== 'string') {
+        try { 
+            arguments[0] = new Request(url, firstArgument); 
+        } catch(e) {
+            console.warn('Failed to rebuild Request object with modified URL, proceeding with original Request. Error:', e);
+        }
+    }
     return window._fetch.apply(this, arguments);
 }
         """
