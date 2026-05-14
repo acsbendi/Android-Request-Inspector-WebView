@@ -21,7 +21,7 @@ allprojects {
 
 ```gradle
 dependencies {
-    implementation 'com.github.acsbendi:Android-Request-Inspector-WebView:1.1.2'
+    implementation 'com.github.acsbendi:Android-Request-Inspector-WebView:1.1.3'
 }
 ```
 
