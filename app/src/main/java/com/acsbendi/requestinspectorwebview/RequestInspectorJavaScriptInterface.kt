@@ -256,6 +256,15 @@ function getFullUrl(url) {
     }
 }
 
+// Normalizes the three forms fetch() accepts for headers — a Headers instance,
+// an array of [name, value] tuples, or a plain object — into a plain object
+// so it can be safely merged with the spread operator.
+function normalizeFetchHeaders(headers) {
+    if (typeof Headers !== 'undefined' && headers instanceof Headers) return Object.fromEntries(headers.entries());
+    if (Array.isArray(headers)) return Object.fromEntries(headers);
+    return headers || {};
+}
+
 function setAdditionalHeaders(url, callback) {
     try {
         var extraHeaders = JSON.parse($INTERFACE_NAME.getAdditionalHeaders(url));
@@ -375,10 +384,18 @@ window.fetch = function () {
         if (!arguments[1]) arguments[1] = {};
         method = 'method' in arguments[1] ? arguments[1]['method'] : "GET";
         body = 'body' in arguments[1] ? arguments[1]['body'] : "";
+        // Normalize headers up-front so JSON.stringify(headers) records correctly
+        // even if setAdditionalHeaders throws before invoking the callback.
         headers = 'headers' in arguments[1] ? arguments[1]['headers'] : {};
+        headers = normalizeFetchHeaders(headers);
+        // Capture the options object here — inside the callback `arguments` is
+        // rebound to the callback's own argument list, so arguments[1] would be undefined.
+        var fetchOptions = arguments[1];
         setAdditionalHeaders(url, function(extraHeaders) {
-            headers = { ...extraHeaders, ...headers };
-            arguments[1].headers = headers;
+            // extraHeaders are applied first so that any headers already set by
+            // the caller take precedence over the injected ones.
+            fetchOptions.headers = { ...extraHeaders, ...headers };
+            headers = fetchOptions.headers;
         });
         arguments[0] = url;
     } else {

@@ -86,6 +86,73 @@ class JavaScriptInterfaceTest {
         assertTrue("Expected URL to contain 'debug=true', was: $url", url.contains("debug=true"))
     }
 
+    // - fetch (string URL, non-plain-object headers) ---------------
+
+    @Test
+    fun fetch_stringUrl_headersInstance_recordsHeaders() {
+        // normalizeFetchHeaders: Headers instance should be converted to a plain object
+        val latch = matcher.expectRequest()
+        runJs("triggerFetchStringUrlWithHeadersInstance()")
+        assertTrue("fetch (Headers instance) not recorded", latch.await(5, TimeUnit.SECONDS))
+
+        val req = matcher.lastRequest!!
+        assertEquals(WebViewRequestType.FETCH, req.type)
+        assertEquals("https://example.com/api/headers-instance", req.url.toString())
+        assertEquals("instance-value", req.headers["x-from-instance"])
+    }
+
+    @Test
+    fun fetch_stringUrl_headersInstance_injectsAdditionalHeaders() {
+        // normalizeFetchHeaders + arguments-scope fix: injection must work when headers is a Headers instance
+        matcher.additionalHeaders = mapOf("X-Injected" to "injected-value")
+        val latch = matcher.expectRequest()
+        runJs("triggerFetchStringUrlWithHeadersInstance()")
+        assertTrue("fetch (Headers instance) with extra header not recorded", latch.await(5, TimeUnit.SECONDS))
+
+        val req = matcher.lastRequest!!
+        assertEquals("instance-value", req.headers["x-from-instance"])
+        assertEquals("injected-value", req.headers["x-injected"])
+    }
+
+    @Test
+    fun fetch_stringUrl_headersArray_recordsHeaders() {
+        // normalizeFetchHeaders: array of [name, value] tuples should be converted to a plain object
+        val latch = matcher.expectRequest()
+        runJs("triggerFetchStringUrlWithHeadersArray()")
+        assertTrue("fetch (headers array) not recorded", latch.await(5, TimeUnit.SECONDS))
+
+        val req = matcher.lastRequest!!
+        assertEquals(WebViewRequestType.FETCH, req.type)
+        assertEquals("https://example.com/api/headers-array", req.url.toString())
+        assertEquals("array-value", req.headers["x-from-array"])
+    }
+
+    @Test
+    fun fetch_stringUrl_headersArray_injectsAdditionalHeaders() {
+        // normalizeFetchHeaders + arguments-scope fix: injection must work when headers is an array
+        matcher.additionalHeaders = mapOf("X-Injected" to "injected-value")
+        val latch = matcher.expectRequest()
+        runJs("triggerFetchStringUrlWithHeadersArray()")
+        assertTrue("fetch (headers array) with extra header not recorded", latch.await(5, TimeUnit.SECONDS))
+
+        val req = matcher.lastRequest!!
+        assertEquals("array-value", req.headers["x-from-array"])
+        assertEquals("injected-value", req.headers["x-injected"])
+    }
+
+    @Test
+    fun fetch_stringUrl_noOptions_injectsAdditionalHeaders() {
+        // arguments-scope fix: when fetch is called with no options object, arguments[1] starts as
+        // undefined and is initialised to {} in the override — fetchOptions must capture that new
+        // object so header injection does not throw inside the callback.
+        matcher.additionalHeaders = mapOf("X-Injected" to "injected-value")
+        val latch = matcher.expectRequest()
+        runJs("triggerFetchStringUrlNoOptions()")
+        assertTrue("fetch (no options) with extra header not recorded", latch.await(5, TimeUnit.SECONDS))
+
+        assertEquals("injected-value", matcher.lastRequest!!.headers["x-injected"])
+    }
+
     // - fetch (request object) -------------------------------------
 
     @Test

@@ -9,6 +9,32 @@ function triggerFetchStringUrl() {
     });
 }
 
+// Headers passed as a Headers instance — exercises normalizeFetchHeaders()
+function triggerFetchStringUrlWithHeadersInstance() {
+    fetch('https://example.com/api/headers-instance', {
+        method: 'GET',
+        headers: new Headers({
+            'X-From-Instance': 'instance-value'
+        })
+    });
+}
+
+// Headers passed as an array of [name, value] tuples — exercises normalizeFetchHeaders()
+function triggerFetchStringUrlWithHeadersArray() {
+    fetch('https://example.com/api/headers-array', {
+        method: 'GET',
+        headers: [
+            ['X-From-Array', 'array-value']
+        ]
+    });
+}
+
+// No options object at all — exercises the arguments-scope fix: arguments[1] starts
+// as undefined and is set to {} before fetchOptions captures it.
+function triggerFetchStringUrlNoOptions() {
+    fetch('https://example.com/api/no-options');
+}
+
 function triggerFetchRequestObject() {
     fetch(new Request('https://example.com/api/request', {
         method: 'PUT',
