@@ -7,7 +7,7 @@ plugins {
 
 apply(plugin = "maven-publish")
 
-val currentVersion = "1.1.3"
+val currentVersion = "1.1.4"
 
 group = "com.acsbendi"
 version = currentVersion
