@@ -6,6 +6,7 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import androidx.core.net.toUri
+import androidx.webkit.WebViewCompat
 import com.acsbendi.requestinspectorwebview.matcher.RequestMatcher
 import org.intellij.lang.annotations.Language
 import org.json.JSONArray
@@ -426,6 +427,18 @@ window.fetch = function () {
     return window._fetch.apply(this, arguments);
 }
         """
+
+        /**
+         * Registers the request interception JavaScript to run at document creation time,
+         * before any page scripts execute. Requires WebViewFeature.DOCUMENT_START_SCRIPT to be supported.
+         */
+        fun registerDocumentStartScript(webView: WebView, extraJavaScriptToInject: String) {
+            WebViewCompat.addDocumentStartJavaScript(
+                webView,
+                "$JAVASCRIPT_INTERCEPTION_CODE\n$extraJavaScriptToInject",
+                setOf("*")
+            )
+        }
 
         fun enabledRequestInspection(webView: WebView, extraJavaScriptToInject: String) {
             webView.evaluateJavascript(

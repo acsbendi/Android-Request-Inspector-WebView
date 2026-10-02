@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <script>
+        // Fires immediately during HTML parsing — before onPageStarted() can inject the
+        // interception hooks via evaluateJavascript() on older devices.
+        fetch('https://example.com/api/early-fetch', {
+            method: 'POST',
+            body: '{"early":true}',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+    </script>
+</head>
+<body></body>
+</html>

@@ -7,6 +7,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.webkit.WebViewFeature
 import com.acsbendi.requestinspectorwebview.matcher.RequestMatcher
 import com.acsbendi.requestinspectorwebview.matcher.RequestUrlMatcher
 
@@ -19,16 +20,24 @@ open class RequestInspectorWebViewClient @JvmOverloads constructor(
 
     private val interceptionJavascriptInterface = RequestInspectorJavaScriptInterface(webView, matcher)
 
+    private val isDocumentStartScriptSupported = WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
+
     init {
         val webSettings = webView.settings
         webSettings.javaScriptEnabled = true
         webSettings.domStorageEnabled = true
+        if (isDocumentStartScriptSupported) {
+            RequestInspectorJavaScriptInterface.registerDocumentStartScript(webView, options.extraJavaScriptToInject)
+        }
     }
 
     final override fun shouldInterceptRequest(
         view: WebView,
         request: WebResourceRequest
     ): WebResourceResponse? {
+        if (request.isForMainFrame) {
+            matcher.onLoadMainFrame(request.url.toString())
+        }
         val webViewRequest = interceptionJavascriptInterface.createWebViewRequest(request)
         return shouldInterceptRequest(view, webViewRequest)
     }
@@ -48,11 +57,12 @@ open class RequestInspectorWebViewClient @JvmOverloads constructor(
 
     override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
         Log.i(LOG_TAG, "Page started loading, enabling request inspection. URL: $url")
-        matcher.onPageStarted(url)
-        RequestInspectorJavaScriptInterface.enabledRequestInspection(
-            view,
-            options.extraJavaScriptToInject
-        )
+        if (!isDocumentStartScriptSupported) {
+            RequestInspectorJavaScriptInterface.enabledRequestInspection(
+                view,
+                options.extraJavaScriptToInject
+            )
+        }
         super.onPageStarted(view, url, favicon)
     }
 

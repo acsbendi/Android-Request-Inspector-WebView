@@ -15,9 +15,15 @@ import java.util.UUID
  * request checking for allowed headers. Even when cleaning up the headers after the request is matched with it's body,
  * the CORS request will fail because the browser engine only knows about the adapted header and doesn't execute the
  * CORS request, because the preflight check doesn't return the custom header as allowed.
+ *
+ * This matcher tracks the current page's origin, so each instance must be used by only one WebView.
+ * Sharing the same instance across multiple WebViews will cause their requests to interfere with each other.
  */
 class GeneratedUuidInHeaderRequestMatcher() : GeneratedUuidRequestMatcher() {
 
+    // @Volatile ensures writes in onLoadMainFrame are visible to getAdditionalHeaders when called
+    // from different threads
+    @Volatile
     private var origin: String = ""
 
     override fun getUuidFromRequest(recordedRequest: RecordedRequest): String? =
@@ -49,7 +55,7 @@ class GeneratedUuidInHeaderRequestMatcher() : GeneratedUuidRequestMatcher() {
         return headersJson
     }
 
-    override fun onPageStarted(url: String) {
+    override fun onLoadMainFrame(url: String) {
         origin = getOrigin(url)
     }
 

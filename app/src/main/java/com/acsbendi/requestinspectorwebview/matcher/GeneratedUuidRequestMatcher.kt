@@ -38,7 +38,7 @@ abstract class GeneratedUuidRequestMatcher : RequestMatcher {
         return recordedRequest
     }
 
-    override fun onPageStarted(url: String) {}
+    override fun onLoadMainFrame(url: String) {}
 
     companion object {
         const val REQUEST_INSPECTOR_ID = "x-request-inspector-id"
